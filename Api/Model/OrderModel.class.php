@@ -196,10 +196,12 @@ class OrderModel extends BaseModel {
 		$product_data = array();*/
 
 		//查询收货地址
-
+		$address = M('')
 
 		foreach ($manifest['items'] as $item) {
+
 			$item['total'] = 0;
+			//查询产品信息
 			foreach ( $item['products'] as &$product) {
 				$product_info = M($product['table_name'])->find($product['table_id']);
 

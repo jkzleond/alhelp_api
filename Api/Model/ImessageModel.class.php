@@ -19,46 +19,63 @@ class ImessageModel extends RelationModel
     /**
      * 获取指定用户的最尽联系人
      */
-    public function getRecentContact($uid, $page_num=1, $page_size=10) {
-
+    public function getRecentContacts($uid, $page_num=1, $page_size=10) {
         $get_rct_total_sql = <<<SQL
-        select count(1) as total from (
+        select count(distinct contact_id) as total from (
               (
-                select id as message_id, to_member_id as concat_id from imessage
-                where from_member_id = '$uid' and to_member_to != '$uid'
+                select id as message_id, to_id as contact_id from imessage
+                where from_member_id = '$uid' and to_id != '$uid'
               )
               union
               (
-                select id as message_id, from_member_id as concat_id from imessage
-                where to_member_id = '$uid' and from_member_to != '$uid'
-              )
-            ) rec_m
-        group by concat_id
-        order by message_id desc
-SQL;
-        $this->query($get_rct_total_sql);
-        $get_recent_message_id_sql = <<<SQL
-        select max(rec_m.message_id) as message_id, rec_m.concat_id from (
-              (
-                select id as message_id, to_member_id as concat_id from imessage
-                where from_member_id = '$uid' and to_member_to != '$uid'
+                select id as message_id, from_member_id as contact_id from imessage
+                where to_id = '$uid' and from_member_id != '$uid' and is_to_group != 1
               )
               union
               (
-                select id as message_id, from_member_id as concat_id from imessage
-                where to_member_id = '$uid' and from_member_to != '$uid'
+                select id as message_id, from_member_id as contact_id from imessage
+                where from_member_id != '$uid' and is_to_group = 1 and to_id in (
+                  select group_id from group_member where member_id = '31527'
+                )
               )
             ) rec_m
-        group by concat_id
-        order by message_id desc
 SQL;
-        $total_rows = $this->query
-        $page = \Think\Page();
+        $count_result = $this->query($get_rct_total_sql);
+        $total_rows = !empty($count_result) ? $count_result[0]['total'] : 0;
 
-        $concat_list = $this->field('rec_m.concat_id, mb.nickname, mb.avatar, m.content as message_content, m.mime_type, m.goods_id')
+        if(!$total_rows) return null;
+
+        $get_recent_message_id_sql = <<<SQL
+        (
+          select max(rec_m.message_id) as message_id, rec_m.contact_id from (
+                (
+                  select id as message_id, to_id as contact_id from imessage
+                  where from_member_id = '$uid' and to_id != '$uid'
+                )
+                union
+                (
+                  select id as message_id, from_member_id as contact_id from imessage
+                  where to_id = '$uid' and from_member_id != '$uid' and is_to_group != 1
+                )
+                union
+                (
+                  select id as message_id, from_member_id as contact_id from imessage
+                  where from_member_id != '$uid' and is_to_group = 1 and to_id in (
+                    select group_id from group_member where member_id = '31527'
+                  )
+                )
+              ) rec_m
+          group by contact_id
+          order by message_id desc
+        )
+SQL;
+        
+       // $page = \Think\Page();
+
+        $concat_list = $this->field('rec_m.contact_id, mb.nickname, mb.avatar, m.content as message_content, m.mime_type, m.goods_id')
                                 ->table($get_recent_message_id_sql)->alias('rec_m')
-                                ->join('left join message as m on m.id = rec_m.message_id')
-                                ->join('left join member as mb on mb.id = rec_m.concat_id')
+                                ->join('left join imessage as m on m.id = rec_m.message_id')
+                                ->join('left join member as mb on mb.id = rec_m.contact_id')
                                 ->join('left join demand as d on d.id = m.goods_id')
                                 ->select();
 
