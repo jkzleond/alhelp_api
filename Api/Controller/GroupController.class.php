@@ -91,7 +91,11 @@ class GroupController extends ApiBaseController {
 		if(!$gid){
 			$this->error('1001');
 		}
-		$group_info = M('Group')->find($gid);
+		$group_info = M('Group')->alias('g')
+				->field('g.*, m.nickname as owner_nickname')
+				->join('left join __MEMBER__ m on m.id = g.owner_id')
+				->where(array('g.id' => $gid))
+				->find();
 		if(!$group_info){
 			$this->error('8005');
 		}else{

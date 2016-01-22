@@ -21,7 +21,7 @@ class ImessageController extends ApiBaseController
         if (!$to_id) {
             $this->error(1001);
         }
-        $type = I('get.type', 'single', 'intval');
+        $type = I('get.type', 'single');
 
         $message_info = $this->get_request_data();
         $message = D('Imessage');
