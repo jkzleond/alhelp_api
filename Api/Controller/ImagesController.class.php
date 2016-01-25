@@ -73,9 +73,9 @@ class ImagesController extends ApiBaseController
 		$values["table_id"] = null;
 		$values["add_time"] = date("Y-m-d H:i:s");
 		$values["sha1"] = $info['sha1'];
-		$values['path'] = info['savepath'] . $info['savename'];
-		$values['name'] = info['name'];
-		$values['size'] = info['size'];
+		$values['path'] = $info['savepath'] . $info['savename'];
+		$values['name'] = $info['name'];
+		$values['size'] = $info['size'];
 		$values['status'] = 1;
 		return $model->add($values);
 	}

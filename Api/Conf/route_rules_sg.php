@@ -41,6 +41,7 @@ return array(
 	"v1/orders/:type$" => array("Account2/orders_get"),
 	"v1/orders/expire/:expire$" => "Account2/orders_expire",
 	"v1/order/:id$" => array("Account2/order_get"),
+	"v1/order$" => array("Order/gen_order"), //生成订单
 	"v1/product/:product_type/:product_id$" => "Account2/product_detail",
     "v1/account/cash_recording/:status/:expire/:page$" => "Account2/cash_recording",
 	"v1/account/coin_recording/:expire/:page$" => "Account2/coin_recording",

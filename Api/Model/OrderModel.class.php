@@ -176,27 +176,14 @@ class OrderModel extends BaseModel {
 		$business = array();
 		$orders = array();
 
-/*		foreach ($manifest['items'] as $item) {
-
-			//查询产品信息
-			$item_info = M($item['products']['table_name'])->field('price, title')->find([$item['table_id']]);
-
-			$item['price'] = $item_info['price'];
-			$item['title'] = $item_info['title'];
-
-			if ( empty($business[$item['business']['total']]) ) {
-				$business[$item['business']]['total'] = $item['price'] * $item['quantity'];
-			} else {
-				$business[$item['business']]['total'] += $item['price'] * $item['quantity'];
-			}
-
-			$business[$item['business']]['products'][] = $item;
-		}
-
-		$product_data = array();*/
-
 		//查询收货地址
-		$address = M('')
+		$address = M('address')->alias('addr')
+					->field('addr.name, addr.phone, addr.postcode, addr.address, p.title as province, c.title as city, a.title as area')
+					->join('lfet join area p on p.id = addr.province')
+					->join('lfet join area c on c.id = addr.city')
+					->join('left join area a on a.id = addr.area')
+					->where(array('addr.id' => $manifest['address_id']))
+					->find();
 
 		foreach ($manifest['items'] as $item) {
 
@@ -223,13 +210,13 @@ class OrderModel extends BaseModel {
 				'from_member_id' => $manifest['uid'],
 				'to_member_id' => $item['business_id'],
 				'total' => $item['total'],
-				'province' => $manifest['address_info']['province'],
-				'city' => $manifest['address_info']['city'],
-				'area' => $manifest['address_info']['area'],
-				'address' => $manifest['address_info']['address'],
-				'postcode' => $manifest['address_info']['postcode'],
-				'name' => $manifest['address_info']['name'],
-				'phone' => $manifest['address_info']['phone'],
+				'province' => $address['province'],
+				'city' => $address['city'],
+				'area' => $address['area'],
+				'address' => $address['address'],
+				'postcode' => $address['postcode'],
+				'name' => $address['name'],
+				'phone' => $address['phone'],
 				'content' => $manifest['remark'],
 				'shipping_template_id' => $item['shipping_template_id'],
 				'shipping' => $item['shipping_price'],
@@ -242,6 +229,7 @@ class OrderModel extends BaseModel {
 				return false;
 			}
 
+			$order['id'] = $new_order_id;
 			$orders[] = $order_data;
 
 			foreach ($item['products'] as $product) {

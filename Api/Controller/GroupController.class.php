@@ -91,55 +91,72 @@ class GroupController extends ApiBaseController {
 		if(!$gid){
 			$this->error('1001');
 		}
-		$group_info = M('Group')->alias('g')
+		$group_info = M()->table(array('group' => 'g'))
 				->field('g.*, m.nickname as owner_nickname')
-				->join('left join __MEMBER__ m on m.id = g.owner_id')
+				->join('left join member m on m.id = g.owner_id')
 				->where(array('g.id' => $gid))
 				->find();
+		
 		if(!$group_info){
 			$this->error('8005');
 		}else{
 			$this->success($group_info);
 		}
-
 	}
 
 	/**
 	 * 获取群列表
-	 * route: im/groups/[:uid]
+	 * route: im/groups/[:uid]/[:is_owner]
 	 */
 	public function group_list_get() {
-
 		$group_model = M('Group');
 		$page_num = I('get.p', 1, 'intval');
 		$page_size = I('get.ps', 10, 'intval');
 
-		$condition = array();
-		$owner_id = I('get.uid', null, 'intval');
-		if ($owner_id) $condition['owner_id'] = $owner_id;
+		$uid = I('get.uid', null, 'intval');
+        $is_owner = I('get.is_owner', 0, 'intval');
+        
+		$options = array();
+        if ($is_owner and $uid) {
+            $options['where']['owner_id'] = $uid;
+        } elseif ($uid) {
+            $options['where']['gm.member_id'] = $uid;
+            $options['where']['g.owner_id'] = $uid;
+            $options['where']['_logic'] = 'OR';
+            $options['join'][] = 'left join group_member gm on gm.group_id = g.id';
+        }
 
 		$filters = $this->get_request_data('filters');
-		empty($filters) or $condition = array_merge($condition, $filters);
-
-		$group_total = $group_model->where($condition)->count();
-
+		empty($filters) or $options['where'] = array_merge($options['where'], $filters);
+        
+        $group_model->options = $options;
+		$group_total = $group_model->table(array('group' => 'g'))->count();
+        
 		$page = new \Think\Page($group_total, $page_size);
 		$page->totalPages = ceil($page->totalRows / $page->listRows);
-		$group_list = $group_model->order('id desc')
-				->where($condition)
+        
+        $group_model->options = $options; //重新设置options
+		$group_list = $group_model->table(array('group' => 'g'))
+		        ->field('g.*, m.nickname as owner_nickname')
+				->join('left join member m on m.id = g.owner_id')
+				->order('id desc')
 				->limit($page->firstRow, $page->listRows)->select();
 
 		if($page_num < 1 or $page_num > $page->totalPages) {
 			$this->success(array(
-				'prevPage' => null,
-				'nextPage' => null,
+				'prev_page' => null,
+				'next_page' => null,
+				'total_rows' => $page->totalRows,
+				'total_pages' => $page->totalPages,
 				'list' => null
 			));
 		} else {
 			$url = 'http://'.I('server.HTTP_HOST').'/'.__INFO__;
 			$this->success(array(
-				'prevPage' => $page_num == 1 ? null : $url.'?p='.($page_num - 1).'&ps='.$page_size,
-				'nextPage' => $page_num == $page->totalPages ? null : $url.'?p='.($page_num + 1).'&ps='.$page_size,
+				'prev_page' => $page_num == 1 ? null : $url.'?p='.($page_num - 1).'&ps='.$page_size,
+				'next_page' => $page_num == $page->totalPages ? null : $url.'?p='.($page_num + 1).'&ps='.$page_size,
+				'total_rows' => $page->totalRows,
+                'total_pages' => $page->totalPages,
 				'list' => $group_list
 			));
 		}
