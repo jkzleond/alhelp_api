@@ -60,7 +60,7 @@ class Demand2Model extends BaseModel {
 			if($profes_type == 1){
 				$demand['memo'] = '非统考 '.$demand['university_string'].' '.$demand['college_string'].' '.$demand['major_string'];
 			}elseif($profes_type == 2){
-				$demand['memo'] = '统考 '. $demand['major_string'];
+				$demand['memo'] = '统考 '.$demand['major_string'];
 			}elseif($profes_type == 3){
 				$demand['memo'] = '公共课';
 			}
@@ -106,13 +106,13 @@ class Demand2Model extends BaseModel {
 		$this_demand ['avator'] = GetSmallAvatar ( $this_demand ['member_id'] );
 
 		//备注
-		$profes_type = $demand['profes_type'];
+		$profes_type = $this_demand['profes_type'];
 		if($profes_type == 1){
-			$demand['memo'] = '非统考 '.$demand['university_string'].' '.$demand['college_string'].' '.$demand['major_string'];
+			$this_demand['memo'] = '非统考 '.$this_demand['university_string'].' '.$this_demand['college_string'].' '.$this_demand['major_string'];
 		}elseif($profes_type == 2){
-			$demand['memo'] = '统考 '. $demand['major_string'];
+			$this_demand['memo'] = '统考 '. $this_demand['major_string'];
 		}elseif($profes_type == 3){
-			$demand['memo'] = '公共课';
+			$this_demand['memo'] = '公共课';
 		}
 
 		return $this_demand;
@@ -265,6 +265,16 @@ class Demand2Model extends BaseModel {
 			$public ['college_string'] = M ( 'school' )->getFieldById ( $public ['college'], 'title_fix' );
 			$public ['major_string'] = M ( 'school' )->getFieldById ( $public ['major'], 'title_fix' );
 			$public ['avator'] = GetSmallAvatar ( $public ['member_id'] );
+
+			//备注
+			$profes_type = $public['profes_type'];
+			if($profes_type == 1){
+				$public['memo'] = '非统考 '.$public['university_string'].' '.$public['college_string'].' '.$public['major_string'];
+			}elseif($profes_type == 2){
+				$public['memo'] = '统考 '.$public['major_string'];
+			}elseif($profes_type == 3){
+				$public['memo'] = '公共课';
+			}
 		}
 		
 		$page_count = ceil ( $page->totalRows / $page->listRows );
@@ -391,6 +401,16 @@ class Demand2Model extends BaseModel {
 					'id' => $demand ['member_id'] 
 			) )->find ();
 			$demand ['avator'] = GetSmallAvatar ( $demand ['member_id'] );
+
+			//备注
+			$profes_type = $demand['profes_type'];
+			if($profes_type == 1){
+				$demand['memo'] = '非统考 '.$demand['university_string'].' '.$demand['college_string'].' '.$demand['major_string'];
+			}elseif($profes_type == 2){
+				$demand['memo'] = '统考 '.$demand['major_string'];
+			}elseif($profes_type == 3){
+				$demand['memo'] = '公共课';
+			}
 		}
 		
 		$page_count = ceil ( $page->totalRows / $page->listRows );
@@ -530,6 +550,16 @@ class Demand2Model extends BaseModel {
 					'id' => $demand ['member_id'] 
 			) )->find ();
 			$demand ['avator'] = GetSmallAvatar ( $demand ['member_id'] );
+
+			//备注
+			$profes_type = $demand['profes_type'];
+			if($profes_type == 1){
+				$demand['memo'] = '非统考 '.$demand['university_string'].' '.$demand['college_string'].' '.$demand['major_string'];
+			}elseif($profes_type == 2){
+				$demand['memo'] = '统考 '.$demand['major_string'];
+			}elseif($profes_type == 3){
+				$demand['memo'] = '公共课';
+			}
 		}
 		
 		$page_count = ceil ( $page->totalRows / $page->listRows );

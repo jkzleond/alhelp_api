@@ -26,12 +26,13 @@ class FansController extends ApiBaseController {
 		$options = array(
 			'alias' => 'f',
 			'join' => array(
+				"LEFT JOIN follow f2 ON f2.to_member_id = f.from_member_id AND f2.from_member_id = f.to_member_id",
 				"LEFT JOIN pillow_talk_time t ON ((t.member_id_s = f.to_member_id AND t.member_id_b = f.from_member_id) OR(t.member_id_b = f.to_member_id AND t.member_id_s = f.from_member_id))",
 				"INNER JOIN member m on f.from_member_id = m.id",
 			),
 			'where' => array("f.to_member_id" => $uid),
-			'field' => "UNIX_TIMESTAMP(f.add_time) as add_time,m.id AS from_member_id,m.nickname AS from_member_nickname,max(t.time) AS last_pillow_talk_time",
-			'order' => "t.time desc",
+			'field' => "UNIX_TIMESTAMP(f.add_time) as add_time,m.id AS from_member_id,m.nickname AS from_member_nickname,max(t.time) AS last_pillow_talk_time, IF(f2.id IS NOT NULL, '1', '0') as is_mutual",
+			'order' => "is_mutual desc, t.time desc",
 			'group' => "f.id",
 		);
 

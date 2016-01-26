@@ -28,9 +28,11 @@ class TalksController extends ApiBaseController {
 					'mp.pid' => 0 
 			);
 			
-			$mp->alias ( 'mp' )->join ( "inner join member m on m.id=mp.member_id" )->where ( $mp_where )->field ( "mp.id,mp.member_id,mp.member_nickname,mp.school_id,mp.content,mp.praise_num,mp.type,mp.add_time" );
-
-
+			$mp->alias('mp')
+					->join("inner join member m on m.id=mp.member_id")
+					->join("left join community c on c.id = mp.community_id")
+					->where($mp_where)
+					->field("mp.id,mp.member_id,mp.member_nickname,mp.school_id,mp.content,mp.praise_num,mp.type,mp.add_time, c.table_type as community_table_type, c.table_id as community_table_id");
 
 			$talk = $mp->find ();
 			
@@ -57,6 +59,15 @@ class TalksController extends ApiBaseController {
 				))->count() ? '1' : '0';
 
 				$talk['is_praised'] = $is_praised;
+
+				$is_com_joined = M('Community')->where(array(
+						'member_id' => $this->uid,
+						'table_id' => $talk['community_table_id'],
+						'table_type' => $talk['community_table_type'],
+						'status' => '1'
+				))->count() ? '1' : '0';
+
+				$talk['is_com_joined'] = $is_com_joined;
 			}
 			
 			$c_where = array (
@@ -75,7 +86,15 @@ class TalksController extends ApiBaseController {
 			}
 			
 			// 回复相关
-			$comment = $mp->alias ( 'mp' )->join ( "left join member m on m.id=mp.member_id" )->join ( "left join member_post_message mpm on mpm.new_id=mp.id and mpm.type=2" )->field ( "mp.id,mp.member_id,mp.member_nickname,mp.content,mp.add_time,mpm.to_member_id" )->where ( $c_where )->order ( 'mp.add_time asc' )->select ();
+			$comment = $mp->alias ( 'mp' )
+					->join("left join member m on m.id=mp.member_id")
+					->join("left join member_post_message mpm on mpm.new_id=mp.id and mpm.type=2")
+					->join("left join ( select id, table_id from community where table_type = 'school' ) c on c.id = mp.community_id")
+					->join("left join school s on s.id = c.table_id")
+					->field("mp.id,mp.member_id,mp.member_nickname,mp.content,mp.add_time,mpm.to_member_id, if(s.group_member_id != 0 and s.group_member_id = mpm.from_member_id, '1', '0') as is_com_owner")
+					->where($c_where)
+					->order('mp.add_time asc')
+					->select ();
 			// dump($mp->_sql());
 			$tmp = array ();
 			foreach ( $comment as $c ) {
@@ -120,7 +139,15 @@ class TalksController extends ApiBaseController {
 		);
 		
 		// 回复相关
-		$comment = $mp->alias ( 'mp' )->join ( "left join member m on m.id=mp.member_id" )->join ( "left join member_post_message mpm on mpm.new_id=mp.id and mpm.type=2" )->field ( "mp.id,mp.member_id,mp.member_nickname,mp.content,mp.add_time,mpm.to_member_id" )->where ( $c_where )->order ( 'mp.add_time asc' )->select ();
+		$comment = $mp->alias ( 'mp' )
+				->join("left join ( select id, table_id from community where table_type = 'school' ) c on c.id = mp.community_id")
+				->join("left join school s on s.id = c.table_id")
+				->join("left join member m on m.id=mp.member_id")
+				->join("left join member_post_message mpm on mpm.new_id=mp.id and mpm.type=2")
+				->field("mp.id,mp.member_id,mp.member_nickname,mp.content,mp.add_time,mpm.to_member_id, if(s.group_member_id != 0 and s.group_member_id = mpm.from_member_id, '1', '0') as is_com_owner")
+				->where($c_where)
+				->order('mp.add_time asc')
+				->select();
 		// dump($mp->_sql());
 		if (empty ( $comment )) {
 			return;
@@ -448,9 +475,10 @@ class TalksController extends ApiBaseController {
 				"where" => $lwhere,
 				"join" => array (
 						"inner join member m on m.id = mp.member_id and m.status = 1",
-						'left join community c on mp.community_id = c.id and c.member_id = mp.member_id'
+						"left join ( select id, table_id from community where table_type = 'school' ) c on c.id = mp.community_id",
+						"left join school s on s.id = c.table_id"
 				),
-				"field" => "mp.*, if(c.id is not null, '1', '0') as is_com_owner",
+				"field" => "mp.*, if(s.group_member_id != 0 and s.group_member_id = mp.member_id, '1', '0') as is_com_owner",
 				"order" => "mp.time_announcement desc ,mp.time_top desc,mp.time_hot desc,mp.add_time desc"
 		);
 
@@ -609,7 +637,7 @@ class TalksController extends ApiBaseController {
 					"where" => $where,
 					"join" => $join,
 					// "field" => "mp.id,mp.member_nickname,mp.content",
-					"field" => "mp.*, if(mp.member_id = c.member_id, '1', '0') as is_com_owner",
+					"field" => "mp.*, if(s.group_member_id != 0 and s.group_member_id = mp.member_id, '1', '0') as is_com_owner",
 					"order" => "mp.time_announcement desc ,mp.time_top desc,mp.time_hot desc,mp.add_time desc" 
 			);
 			
@@ -744,9 +772,10 @@ class TalksController extends ApiBaseController {
 				"join" => array (
 						($type == "follow" ? "inner join follow f on f.from_member_id={$uid} and f.to_member_id=mp.member_id" : "inner join follow f on f.from_member_id=mp.member_id and f.to_member_id={$uid}"),
 						"inner join member m on m.id = mp.member_id and m.status = 1",
-						'left join community c on mp.community_id = c.id and c.member_id = mp.member_id'
+						"left join community c on c.id = mp.community_id",
+						"left join school s on s.id = c.table_id on c.table_type = 'school'"
 				),
-				"field" => "mp.*, if(c.id is not null, '1', '0') as is_com_owner",
+				"field" => "mp.*, if(s.group_member_id != 0 and s.group_member_id = mp.member_id, '1', '0') as is_com_owner",
 				"order" => "mp.time_announcement desc ,mp.time_top desc,mp.time_hot desc,mp.add_time desc" 
 		);
 		
@@ -948,9 +977,10 @@ class TalksController extends ApiBaseController {
 				"where" => $lwhere,
 				"join" => array (
 						"inner join member m on m.id = mp.member_id and m.status = 1",
-						'left join community c on mp.community_id = c.id and c.member_id = mp.member_id'
+						"left join community c on c.id = mp.community_id",
+						"left join school s on s.id = c.table_id and c.table_type = 'school'"
 				),
-				"field" => "mp.*, if(c.id is not null, '1', '0') as is_com_owner",
+				"field" => "mp.*, if(s.group_member_id != 0 and s.group_member_id = mp.member_id, '1', '0') as is_com_owner",
 				"order" => "mp.time_announcement desc ,mp.time_top desc,mp.time_hot desc,mp.add_time desc" 
 		);
 		
