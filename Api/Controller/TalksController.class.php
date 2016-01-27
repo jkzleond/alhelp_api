@@ -8,7 +8,8 @@ class TalksController extends ApiBaseController {
 	public function _initialize()
 	{
 		//如果带有X_AUTH_TOKEN头则需要检测token
-		if ( !empty($this->get_header('X_AUTH_TOKEN')) ) {
+		$x_auth_token = $this->get_header('X_AUTH_TOKEN');
+		if ( !empty($x_auth_token) ) {
 			$this->is_check_token = true;
 		}
 	}
