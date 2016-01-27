@@ -467,8 +467,6 @@ class TalksController extends ApiBaseController {
 		//提交了community_id则只查询指定圈子的说说
 		$community_id = $this->get_request_data('community_id');
 
-		file_put_contents('req_data.json',json_encode($this->get_request_data()), FILE_APPEND);
-
 		if ($community_id) {
 			$lwhere['mp.community_id'] = $community_id;
 		}
