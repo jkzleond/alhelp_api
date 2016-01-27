@@ -774,7 +774,7 @@ class TalksController extends ApiBaseController {
 						($type == "follow" ? "inner join follow f on f.from_member_id={$uid} and f.to_member_id=mp.member_id" : "inner join follow f on f.from_member_id=mp.member_id and f.to_member_id={$uid}"),
 						"inner join member m on m.id = mp.member_id and m.status = 1",
 						"left join community c on c.id = mp.community_id",
-						"left join school s on s.id = c.table_id on c.table_type = 'school'"
+						"left join school s on s.id = c.table_id and c.table_type = 'school'"
 				),
 				"field" => "mp.*, if(s.group_member_id != 0 and s.group_member_id = mp.member_id, '1', '0') as is_com_owner",
 				"order" => "mp.time_announcement desc ,mp.time_top desc,mp.time_hot desc,mp.add_time desc" 
@@ -798,7 +798,7 @@ class TalksController extends ApiBaseController {
 		}
 		
 		$data = $mp->select ( $options );
-		
+
 		foreach ( $data as &$talk ) {
 			
 			// 附件相关

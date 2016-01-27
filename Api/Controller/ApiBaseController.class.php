@@ -85,12 +85,10 @@ class ApiBaseController extends RestController {
 				//无效token终止程序
 
 				$this->error(1401);
+			} else if(self::$token) {
+				self::$token = new \Api\Model\TokenModel(self::$token);
 			}
-		} else if (self::$token === false) {
-			return false;
 		}
-
-		self::$token = new \Api\Model\TokenModel(self::$token);
 
 		return self::$token;
 	}
