@@ -178,7 +178,7 @@ class OrderModel extends BaseModel {
 
 		//查询收货地址
 		$address = M('address')->alias('addr')
-					->field('addr.name, addr.phone, addr.postcode, addr.address, p.title as province, c.title as city, a.title as area')
+					->field('addr.name, addr.phone, addr.postcode, addr.address, p.id as province, c.id as city, a.id as area')
 					->join('lfet join area p on p.id = addr.province')
 					->join('lfet join area c on c.id = addr.city')
 					->join('left join area a on a.id = addr.area')
@@ -217,7 +217,7 @@ class OrderModel extends BaseModel {
 				'postcode' => $address['postcode'],
 				'name' => $address['name'],
 				'phone' => $address['phone'],
-				'content' => $manifest['remark'],
+				'content' => $item['remark'],
 				'shipping_template_id' => $item['shipping_template_id'],
 				'shipping' => $item['shipping_price'],
 				'add_time' => date('Y-m-d H:i:s')
