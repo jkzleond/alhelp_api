@@ -1094,7 +1094,14 @@ class TalksController extends ApiBaseController {
 	public function top_put() {
 		$id = I('get.id', 0, 'intval');
 		if(!$id) $this->error(1001);
-		$success = M('member_post')->setField('time_top', time())->where(array('id' => $id));
+
+		$is_top = I('get.is_top', 1);
+		$time_top = 0;
+		if ($is_top) {
+			$time_top = time();
+		}
+
+		$success = M('member_post')->where(array('id' => $id))->setField('time_top', $time_top);
 		if (!$success) {
 			$this->error(1500);
 		} else {
@@ -1108,7 +1115,14 @@ class TalksController extends ApiBaseController {
 	public function hot_put() {
 		$id = I('get.id', 0, 'intval');
 		if(!$id) $this->error(1001);
-		$success = M('member_post')->setField('time_hot', time())->where(array('id' => $id));
+
+		$is_hot = I('get.is_hot', 1);
+		$time_hot = 0;
+		if ($is_hot) {
+			$time_hot = time();
+		}
+
+		$success = M('member_post')->where(array('id' => $id))->setField('time_hot', $time_hot);
 		if (!$success) {
 			$this->error(1500);
 		} else {
@@ -1122,7 +1136,13 @@ class TalksController extends ApiBaseController {
 	public function announce_put() {
 		$id = I('get.id', 0, 'intval');
 		if(!$id) $this->error(1001);
-		$success = M('member_post')->setField('time_announce', time())->where(array('id' => $id));
+
+		$is_ann = I('get.is_ann', 1);
+		$time_ann = 0;
+		if ($is_ann) {
+			$time_ann = time();
+		}
+		$success = M('member_post')->where(array('id' => $id))->setField('time_announcement', $time_ann);
 		if (!$success) {
 			$this->error(1500);
 		} else {

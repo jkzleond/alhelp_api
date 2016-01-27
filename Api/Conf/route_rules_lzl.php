@@ -31,10 +31,13 @@ return array(
 	"v1/talks/listby/:type/:type_id" => "Talks/talk_where", //通过大学、学院、专业获取说说列表
 	"v1/talks/:id/comment" => "Talks/talks_comment", //回复说说
 	"v1/talks/:id/praise" => "Talks/praise", //说说点赞
-	"v1/talks/:id/top" => "Talk/top", //说说置顶
-	"v1/talks/:id/hot" => "Talk/hot", //说说设置热门
-	"v1/talks/:id/ann" => "Talk/announce", //说说设置公告
-	"v1/talks/:id/del" => "Talk/talk_delete", //删除说说
+	"v1/talks/:id/top" => "Talks/top", //说说置顶
+	"v1/talks/:id/top_off" => array("Talks/top", "is_top=0"), //取消说说置顶
+	"v1/talks/:id/hot" => "Talks/hot", //说说设置热门
+	"v1/talks/:id/hot_off" => array("Talks/hot", "is_hot=0"), //取消说说热门
+	"v1/talks/:id/ann" => "Talks/announce", //说说设置公告
+	"v1/talks/:id/ann_off" => array("Talks/announce", "is_ann=0"), //取消说说公告
+	"v1/talks/:id/del" => "Talks/talk_delete", //删除说说
 	"v1/talks/:id" => "Talks/talks_details", //获取说说详情
 	"v1/talks" => "Talks/add_talk", //发表说说
 
