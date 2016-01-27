@@ -464,11 +464,11 @@ class TalksController extends ApiBaseController {
 			$lwhere ['mp.member_id'] = $uid;
 		}
 
-		//提交了community_id则只查询指定圈子的说说
-		$community_id = $this->get_request_data('community_id');
+		//提交了community_id(member_post字段community_id,实际为school的id)则只查询指定圈子的说说
+		$school_id = $this->get_request_data('community_id');
 
-		if ($community_id) {
-			$lwhere['mp.community_id'] = $community_id;
+		if ($school_id) {
+			$lwhere['s.id'] = $school_id;
 		}
 
 		$options = array (
@@ -476,8 +476,8 @@ class TalksController extends ApiBaseController {
 				"where" => $lwhere,
 				"join" => array (
 						"inner join member m on m.id = mp.member_id and m.status = 1",
-						"left join ( select id, table_id from community where table_type = 'school' ) c on c.id = mp.community_id",
-						"left join school s on s.id = c.table_id"
+						"left join community c on c.id = mp.community_id",
+						"left join school s on s.id = c.table_id and c.table_type = 'school'"
 				),
 				"field" => "mp.*, if(s.group_member_id != 0 and s.group_member_id = mp.member_id, '1', '0') as is_com_owner",
 				"order" => "mp.time_announcement desc ,mp.time_top desc,mp.time_hot desc,mp.add_time desc"
@@ -760,11 +760,11 @@ class TalksController extends ApiBaseController {
 				) 
 		);
 
-		//提交了community_id则只查询指定圈子的说说
-		$community_id = $this->get_request_data('community_id');
+		//提交了community_id(member_post字段community_id,实际为school的id)则只查询指定圈子的说说
+		$school_id = $this->get_request_data('community_id');
 
-		if ($community_id) {
-			$lwhere['mp.community_id'] = $community_id;
+		if ($school_id) {
+			$lwhere['s.id'] = $school_id;
 		}
 		
 		$options = array (
@@ -966,11 +966,11 @@ class TalksController extends ApiBaseController {
 		);
 		$lwhere ['_string'] = " m.is_vip_order>0 ";
 
-		//提交了community_id则只查询指定圈子的说说
-		$community_id = $this->get_request_data('community_id');
+		//提交了community_id(member_post字段community_id,实际为school的id)则只查询指定圈子的说说
+		$school_id = $this->get_request_data('community_id');
 
-		if ($community_id) {
-			$lwhere['mp.community_id'] = $community_id;
+		if ($school_id) {
+			$lwhere['s.id'] = $school_id;
 		}
 		
 		$options = array (
