@@ -42,8 +42,30 @@ class ImessageController extends ApiBaseController
         $this->success();
     }
 
-    public function message_list_get() {
+    /**
+     * 获取聊天记录
+     */
+    public function history_get() {
+        $this->check_token();
+        $to_id = I('get.to_id', null, 'intval');
+        if (!$to_id) {
+            $this->error(1001);
+        }
+        $type = I('get.type', 'single');
+        $page_num = I('get.p', 1, 'intval');
+        $page_size = I('get.ps', 10, 'intval');
 
+        $message = D('Imessage');
+        $history = $message->get_histroy($this->uid, $to_id, $type, $page_num, $page_size);
+        $total_rows = $message->get_histroy_total($this->uid, $to_id, $type);
+        $total_pages = ceil($total_rows/$page_size);
+
+        $this->success(array(
+            'list' => $history,
+            'count' => count($history),
+            'total_rows' => $total_rows,
+            'total_pages' => $total_pages
+        )); 
     }
 
     /**

@@ -90,4 +90,79 @@ SQL;
         return $concat_list;
 
     }
+
+    /**
+     * 获取用户与某用户或某群的聊天记录
+     * @param  int|string  $uid       用户ID
+     * @param  int|string  $to_id     其他用户ID
+     * @param  string  $type      聊天类型
+     * @param  integer $page_num  页码
+     * @param  integer $page_size 每页条目数
+     * @return array|bool         
+     */
+    public function get_histroy($uid, $to_id, $type='single', $page_num=1, $page_size=10) {
+
+        $where = null;
+
+        if ($type = 'single') {
+            $where = array(
+                array(
+                    'from_member_id' => $uid,
+                    'to_id' => $to_id,
+                    'is_to_group' => 0
+                ),
+                array(
+                    'from_member_id' => $to_id,
+                    'to_id' => $uid,
+                    'is_to_group' => 0
+                ),
+                '_logic' => 'OR'
+            );
+        } else {
+            $where = array(
+                'to_id' => $to_id,
+                'is_to_group' => 1
+            );
+        }
+
+        $messages = $this->where($where)
+                          ->select();
+        return $messages;
+    }
+
+    /**
+     * 获取历史消息总数
+     * @param  int|string $uid    用户ID
+     * @param  int|string $to_id  其他用户ID
+     * @param  int|string $type   消息类型 单用户或群
+     * @return int
+     */
+    public function get_histroy_total($uid, $to_id, $type='single') {
+        $where = null;
+
+        if ($type = 'single') {
+            $where = array(
+                array(
+                    'from_member_id' => $uid,
+                    'to_id' => $to_id,
+                    'is_to_group' => 0
+                ),
+                array(
+                    'from_member_id' => $to_id,
+                    'to_id' => $uid,
+                    'is_to_group' => 0
+                ),
+                '_logic' => 'OR'
+            );
+        } else {
+            $where = array(
+                'to_id' => $to_id,
+                'is_to_group' => 1
+            );
+        }
+
+        $total = $this->where($where)
+                      ->count();
+        return $total;
+    }
 }
