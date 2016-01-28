@@ -184,12 +184,11 @@ class OrderModel extends BaseModel {
 					->where(array('addr.id' => $manifest['address_id']))
 					->find();
 
-		$products = array();
 		foreach ($manifest['items'] as $item) {
+			$products = array();
 			$item['total'] = 0;
 			//查询产品信息
 			foreach ( $item['goods'] as $g) {
-				$product = array();
 				switch ($g['type']) {
 					case 'book':
 						//产品类型为资料(分为有图书和没图书的情况)
@@ -198,35 +197,42 @@ class OrderModel extends BaseModel {
 								'type' => 1
 						))->select();
 						if (!empty($books)) {
-
-							foreach ( $ ) {
-
+							//存在图书,并可能存在多本
+							foreach ( $books as $book ) {
+								$product = array();
+								$product['table_id'] = $book['id'];
+								$product['table_name'] = 'book';
+								$product['title'] = $book['title'];
+								$product['price'] = $book['price'];
+								$product['member_id'] = $book['member_id'];
+								$product['quantity'] = $g['quantity']; 
+								$products[] = $product;
+								$item['total'] += $product['price'] * $product['quantity'];
 							}
 
-							//存在图书
-							$product['table_id'] = $product_info['id'];
-							$product['table_name'] = 'book';
-							$product['title'] = $product_info['title'];
-							$product['price'] = $product_info['price'];
-							$product['member_id'] = $product_info['member_id'];
 						} else {
 							//不寻在图书,则产品为需求本身
-							$product_info = M('demand')->find($g['id']);
+							$demand = M('demand')->find($g['id']);
+
+							if (empty($demand)) {
+								$this->rollback();
+								return false;
+							}
+
+							$product = array();
+							$product['table_id'] = $demand['id'];
+							$product['table_name'] = 'demand';
+							$product['title'] = $demand['description'];
+							$product['price'] = $demand['cost'];
+							$product['member_id'] = $demand['member_id'];
+							$product['quantity'] = $g['quantity'];
+							$products[] = $product;
+							$item['total'] += $product['price'] * $product['quantity'];
 						}
 						break;
 					case 'bid':
 						break;
 				}
-
-
-				//验证产品是不是属于该商家
-				/*if ($item['business_id'] != $product_info['member_id']) {
-					$this->rollback();
-					return false;
-				}*/
-
-
-				$item['total'] += $product['price'] * $product['quantity'];
 			}
 
 			$group_num = getordcode();
@@ -257,17 +263,15 @@ class OrderModel extends BaseModel {
 
 			$order_data['id'] = $new_order_id;
 			$orders[] = $order_data;
-			foreach ($item['products'] as $pdt) {
-
+			foreach ($products as $product) {
 				//添加订单商品
 				$product_data[] = array(
 						'order_id' => $new_order_id,
-						'table_name' => $pdt['table_name'],
-						'table_id' => $pdt['table_id'],
-						'title' => $pdt['title'],
-						'price' => $pdt['price'],
-						'quantity' => $pdt['quantity'],
-						'status' => 1,
+						'table_name' => $product['table_name'],
+						'table_id' => $product['table_id'],
+						'title' => $product['title'],
+						'price' => $product['price'],
+						'quantity' => $product['quantity'],
 						'add_time' => date('Y-m-d H:i:s')
 				);
 			}

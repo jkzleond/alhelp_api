@@ -38,7 +38,7 @@ class OrderController extends ApiBaseController {
     /**
      * 订单支付
      */
-    public function pay_post() {
+    public function pay_put() {
         $this->check_token();
 
         $order_ids = $this->get_request_data('order_ids');
@@ -48,7 +48,7 @@ class OrderController extends ApiBaseController {
         }
         
         $order_model = D('Order');
-        $orders = $order_model->where(array('id' => arrray('in', $order_ids)))->select();
+        $orders = $order_model->where(array('id' => array('in', $order_ids)))->select();
         $user_model = M('member');
         $user = $user_model->field('balance')->find($this->uid);
 
@@ -58,14 +58,13 @@ class OrderController extends ApiBaseController {
         }
 
         $pay_type = I('get.pay_type', 'remain');
-        $total = $orders['total'] + $orders['shipping'];
-
 
         if ( $pay_type == 'remain' ) {
             if ( $user['balance'] < $total ) {
+                //余额不足
                 $this->error(3020);
             }
-            //将余额转到系统账户
+            //将余额转到系统账户(确认收货后转入卖家账户)
             $user_model->startTrans();
             $dec_balance_success = $user_model->where(array('id' => $this->uid))->setDec('balance', $total);
             if ( !$dec_balance_success ) {
@@ -77,9 +76,19 @@ class OrderController extends ApiBaseController {
                 $user_model->rollback();
                 $this->error(1500);
             }
+
+            //更改订单为已付款
+            $update_order_success = $order_model->where(array('id' => array('in', $order_ids)))->setField('status', 1);
+            if (!$update_order_success) {
+                $user_model->rollback();
+                return false;
+            }
+
             $success = $user_model->commit();
             
             if ( !$success ) $this->error(1500);
+
+            $this->success();
             
         } elseif ( $pay_type == 'alipay' ) {
             //TODO alipay
