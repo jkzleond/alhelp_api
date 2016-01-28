@@ -16,14 +16,22 @@ class OrderController extends ApiBaseController {
      */
     public function gen_order_post() {
         $this->check_token();
-        $manifest = $this->get_request_data('manifest');
+        $manifest = $this->get_request_data();
+
+        if ( empty($manifest) or !isset($manifest['address_id']) or !isset($manifest['items']) ) {
+            $this->error(1001);
+        }
+
         $manifest['uid'] = $this->uid;
         $orders = D('Order')->gen_order($manifest);
 
-        if ( empty($order) ) {
-        	$this->error(1001);
+        if ( empty($orders) ) {
+        	$this->error(1500);
         } else {
-        	$this->success($orders);
+        	$this->success(array(
+                'list' => $orders,
+                'count' => count($orders)
+            ));
         }
     }
     
@@ -32,14 +40,8 @@ class OrderController extends ApiBaseController {
      */
     public function pay_post() {
         $this->check_token();
-        $order_id = I('get.order_id', null, 'intval');
-        $order_ids = array();
 
-        if ( $order_id ) {
-            $order_ids[] = $order_id;
-        } else {
-            $order_ids = $this->get_request_data('order_ids');
-        }
+        $order_ids = $this->get_request_data('order_ids');
 
         if (empty($order_ids)) {
             $this->error(1001);
@@ -80,9 +82,9 @@ class OrderController extends ApiBaseController {
             if ( !$success ) $this->error(1500);
             
         } elseif ( $pay_type == 'alipay' ) {
-            
+            //TODO alipay
         } elseif ( $pay_type === 'wxpay' ) {
-            
+            //TODO wxpay
         }
     }
 }

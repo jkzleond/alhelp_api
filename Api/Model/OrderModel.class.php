@@ -173,43 +173,69 @@ class OrderModel extends BaseModel {
 	public function gen_order($manifest) {
 		$this->startTrans();
 		$order_num = getordcode();
-		$business = array();
 		$orders = array();
 
 		//查询收货地址
 		$address = M('address')->alias('addr')
 					->field('addr.name, addr.phone, addr.postcode, addr.address, p.id as province, c.id as city, a.id as area')
-					->join('lfet join area p on p.id = addr.province')
-					->join('lfet join area c on c.id = addr.city')
+					->join('left join area p on p.id = addr.province')
+					->join('left join area c on c.id = addr.city')
 					->join('left join area a on a.id = addr.area')
 					->where(array('addr.id' => $manifest['address_id']))
 					->find();
 
+		$products = array();
 		foreach ($manifest['items'] as $item) {
-
 			$item['total'] = 0;
 			//查询产品信息
-			foreach ( $item['products'] as &$product) {
-				$product_info = M($product['table_name'])->find($product['table_id']);
+			foreach ( $item['goods'] as $g) {
+				$product = array();
+				switch ($g['type']) {
+					case 'book':
+						//产品类型为资料(分为有图书和没图书的情况)
+						$books = M('book')->where(array(
+								'cid' => $g['id'],
+								'type' => 1
+						))->select();
+						if (!empty($books)) {
 
-				if ($item['business_id'] != $product_info['member_id']) {
-					$this->rollback();
-					return false;
+							foreach ( $ ) {
+
+							}
+
+							//存在图书
+							$product['table_id'] = $product_info['id'];
+							$product['table_name'] = 'book';
+							$product['title'] = $product_info['title'];
+							$product['price'] = $product_info['price'];
+							$product['member_id'] = $product_info['member_id'];
+						} else {
+							//不寻在图书,则产品为需求本身
+							$product_info = M('demand')->find($g['id']);
+						}
+						break;
+					case 'bid':
+						break;
 				}
 
-				$product['title'] = $product_info['title'];
-				$product['price'] = $product_info['price'];
-				$product['member_id'] = $product_info['member_id'];
+
+				//验证产品是不是属于该商家
+				/*if ($item['business_id'] != $product_info['member_id']) {
+					$this->rollback();
+					return false;
+				}*/
+
+
 				$item['total'] += $product['price'] * $product['quantity'];
 			}
 
-			$group_num = getordercode();
+			$group_num = getordcode();
 			$order_data = array(
-				'order_num' => $order_num,
+				'order_number' => $order_num,
 				'group_num' => $group_num,
 				'from_member_id' => $manifest['uid'],
 				'to_member_id' => $item['business_id'],
-				'total' => $item['total'],
+				'total' => round($item['total'], 2),
 				'province' => $address['province'],
 				'city' => $address['city'],
 				'area' => $address['area'],
@@ -223,24 +249,24 @@ class OrderModel extends BaseModel {
 				'add_time' => date('Y-m-d H:i:s')
 			);
 
-			$new_order_id = M('Orders')->add($order_data);
+			$new_order_id = $this->add($order_data);
 			if ( !$new_order_id ) {
 				$this->rollback();
 				return false;
 			}
 
-			$order['id'] = $new_order_id;
+			$order_data['id'] = $new_order_id;
 			$orders[] = $order_data;
+			foreach ($item['products'] as $pdt) {
 
-			foreach ($item['products'] as $product) {
 				//添加订单商品
 				$product_data[] = array(
 						'order_id' => $new_order_id,
-						'table_name' => $product['table_name'],
-						'table_id' => $product['table_id'],
-						'title' => $product['title'],
-						'price' => $product['price'],
-						'quantity' => $product['quantity'],
+						'table_name' => $pdt['table_name'],
+						'table_id' => $pdt['table_id'],
+						'title' => $pdt['title'],
+						'price' => $pdt['price'],
+						'quantity' => $pdt['quantity'],
 						'status' => 1,
 						'add_time' => date('Y-m-d H:i:s')
 				);
@@ -248,6 +274,7 @@ class OrderModel extends BaseModel {
 		}
 
 		$add_product_success = M('order_product')->addAll($product_data);
+
 		if (!$add_product_success) {
 			$this->rollBack();
 			return false;
