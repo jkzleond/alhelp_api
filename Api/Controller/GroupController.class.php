@@ -29,12 +29,19 @@ class GroupController extends ApiBaseController {
 			$this->error('1500');
 		}
 
-		$group->id = $group->getLastInsID();
+		$new_group_id = $group->getLastInsID();
+		$group->id = $new_group_id;
 		$group->group_id = str_pad($group->getLastInsID(), 6, '0', STR_PAD_LEFT);
 		$group_data = $group->data();
 		$is_save = $group->save();
 		if (!$is_save) {
 			$group->rollBack();
+			$this->error('1500');
+		}
+		//将群主加入群
+		$add_member_success = $group->addMembers($new_group_id, array($this->uid));
+		if (!$add_member_success) {
+			$group->rollback();
 			$this->error('1500');
 		}
 

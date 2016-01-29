@@ -19,7 +19,7 @@ class ImessageModel extends RelationModel
     /**
      * 获取指定用户的最尽联系人
      */
-    public function getRecentContacts($uid, $page_num=1, $page_size=10) {
+    public function get_recent_contacts($uid, $page_num=1, $page_size=10) {
         $get_rct_total_sql = <<<SQL
         select count(distinct contact_id) as total from (
               (
@@ -100,11 +100,11 @@ SQL;
      * @param  integer $page_size 每页条目数
      * @return array|bool         
      */
-    public function get_histroy($uid, $to_id, $type='single', $page_num=1, $page_size=10) {
+    public function get_history($uid, $to_id, $type='single', $page_num=1, $page_size=10) {
 
         $where = null;
 
-        if ($type = 'single') {
+        if ($type == 'single') {
             $where = array(
                 array(
                     'from_member_id' => $uid,
@@ -125,8 +125,13 @@ SQL;
             );
         }
 
-        $messages = $this->where($where)
-                          ->select();
+        $this->where($where);
+
+        if ($page_num) {
+            $this->page($page_num, $page_size);
+        }
+
+        $messages = $this->select();
         return $messages;
     }
 
@@ -137,10 +142,10 @@ SQL;
      * @param  int|string $type   消息类型 单用户或群
      * @return int
      */
-    public function get_histroy_total($uid, $to_id, $type='single') {
+    public function get_history_total($uid, $to_id, $type='single') {
         $where = null;
 
-        if ($type = 'single') {
+        if ($type == 'single') {
             $where = array(
                 array(
                     'from_member_id' => $uid,
@@ -163,6 +168,92 @@ SQL;
 
         $total = $this->where($where)
                       ->count();
+        return $total;
+    }
+
+    /**
+     * 获取发给某用户的未读信息
+     * @param $uid
+     * @param $page_num
+     * @param $page_size
+     * @return array
+     */
+    public function get_no_read($uid, $page_num=1, $page_size=10) {
+        $group_in = M('group_member')->where(array('member_id' => $uid))->getField('group_id', true);
+        $this->alias('m')->join('left join group_member gm on gm.group_id = m.to_id and m.is_to_group = 1')
+            ->where(array(
+                array(
+                    'to_id' => $uid,                          //非群
+                    'from_member_id' => array('neq', $uid),
+                    'is_to_group' => 0,
+                    'is_read' => 0
+                ),
+                array(
+                    'to_id' => array('in', $group_in),        //群
+                    'from_member_id' => array('neq', $uid),
+                    'is_to_group' => 1,
+                    '_string' => 'm.add_time > gm.last_read_time or gm.last_read_time is null' //群未读通过最后一次阅读群消息时间来标记
+                ),
+                '_logic' => 'OR'
+            ));
+
+        if ($page_num) {
+            $this->page($page_num, $page_size);
+        }
+
+        $no_read = $this->field("m.id, if(m.is_to_group = 1, '1','0') as is_to_group, if(m.is_read = 1, '1', '0') as is_read,
+        case when length(m.content) > 10 and m.mime_type = 0 then
+        concat(left(m.content, '10'), '...')
+        when m.mime_type = 0 then
+        m.content
+        when m.mime_type = 1 then
+        '[图片]'
+        when m.mime_type = 2 then
+        '[声音]'
+        end as content,
+        case when m.mime_type = 1 or m.mime_type = 2 then
+        m.content
+        else
+        null
+        end as src,
+        case when m.is_to_group = 1 then
+        m.to_id
+        else
+        m.from_member_id
+        end as from_member_id, m.add_time
+        ")->select();
+
+        return $no_read;
+    }
+
+    /**
+     * 获取未读总条数
+     * @param $uid
+     * @return int
+     */
+    public function get_no_read_total($uid) {
+        $group_in = M('group_member')->where(array('member_id' => $uid))->getField('group_id', true);
+        $last_read_time = M('group_member')->where(array(
+            'member_id' => $uid
+        ))->getField('last_read_time');
+        $total = $this->table(array('imessage' => 'm'))
+            ->join('left join group_member gm on gm.group_id = m.to_id and m.is_to_group = 1')
+            ->where(array(
+                array(
+                    'to_id' => $uid,                          //非群
+                    'from_member_id' => array('neq', $uid),
+                    'is_to_group' => 0,
+                    'is_read' => 0
+                ),
+                array(
+                    'to_id' => array('in', $group_in),        //群
+                    'from_member_id' => array('neq', $uid),
+                    'is_to_group' => 1,
+                    '_string' => 'm.add_time > gm.last_read_time or gm.last_read_time is null'
+                ),
+                '_logic' => 'OR'
+            ))
+            ->count();
         return $total;
     }
 }

@@ -56,8 +56,8 @@ class ImessageController extends ApiBaseController
         $page_size = I('get.ps', 10, 'intval');
 
         $message = D('Imessage');
-        $history = $message->get_histroy($this->uid, $to_id, $type, $page_num, $page_size);
-        $total_rows = $message->get_histroy_total($this->uid, $to_id, $type);
+        $history = $message->get_history($this->uid, $to_id, $type, $page_num, $page_size);
+        $total_rows = $message->get_history_total($this->uid, $to_id, $type);
         $total_pages = ceil($total_rows/$page_size);
 
         $this->success(array(
@@ -69,6 +69,27 @@ class ImessageController extends ApiBaseController
     }
 
     /**
+     * 获取未读消息
+     */
+    public function no_read_msg_get() {
+        $this->check_token();
+        $page_num = I('get.p', null, 'intval');
+        $page_size = I('get.ps', 10, 'intval');
+        $message_model = D('Imessage');
+        $no_read = $message_model->get_no_read($this->uid, $page_num, $page_size);
+        $total_rows = $message_model->get_no_read_total($this->uid);
+        $total_pages = $page_num ? ceil($total_rows/$page_size) : ( $total_rows >= 0 ? 1 : 0 );
+        $this->success(
+            array(
+                'list' => $no_read,
+                'count' => count($no_read),
+                'total_rows' => $total_rows,
+                'total_pages' => $total_pages
+            )
+        );
+    }
+
+    /**
      * 获取最近联系人列表
      * im/message/rct_contacts
      */
@@ -76,8 +97,41 @@ class ImessageController extends ApiBaseController
         $this->check_token();
         $page_num = I('get.p', 1, 'intval');
         $page_size = I('get.ps', 10, 'intval');
-        $recent_concat_list = D('Imessage')->getRecentContacts($this->uid); //$this->uid
+        $recent_concat_list = D('Imessage')->get_recent_contacts($this->uid); //$this->uid
 
         $this->success($recent_concat_list);
+    }
+
+    /**
+     * 标记已读
+     */
+    public function mark_read_put() {
+        $this->check_token();
+        $type = I('get.type', 'single');
+        $from_id = I('get.from_id');
+        if (!$from_id) {
+            $this->error(1001);
+        }
+
+        $mark_success = false;
+
+        if ($type == 'single') {
+            $mark_success = M('Imessage')->where(array(
+                'from_member_id' => $from_id,
+                'to_id' => $this->uid,
+                'is_to_group' => 0
+            ))->setField('is_read', 1);
+        } else {
+            $mark_success = M('GroupMember')->where(array(
+                'member_id' => $this->uid,
+                'group_id' => $from_id
+            ))->setField('last_read_time', date('Y-m-d H:i:s'));
+        }
+
+        if (!$mark_success) {
+            $this->error(1500);
+        }
+
+        $this->success();
     }
 }
