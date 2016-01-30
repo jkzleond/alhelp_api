@@ -52,13 +52,13 @@ class ImessageController extends ApiBaseController
             $this->error(1001);
         }
         $type = I('get.type', 'single');
-        $page_num = I('get.p', 1, 'intval');
+        $page_num = I('get.p', null, 'intval');
         $page_size = I('get.ps', 10, 'intval');
 
         $message = D('Imessage');
         $history = $message->get_history($this->uid, $to_id, $type, $page_num, $page_size);
         $total_rows = $message->get_history_total($this->uid, $to_id, $type);
-        $total_pages = ceil($total_rows/$page_size);
+        $total_pages = $page_num ? ceil($total_rows/$page_size) : ( $total_rows > 0 ? 1 : 0 );
 
         $this->success(array(
             'list' => $history,
@@ -78,7 +78,7 @@ class ImessageController extends ApiBaseController
         $message_model = D('Imessage');
         $no_read = $message_model->get_no_read($this->uid, $page_num, $page_size);
         $total_rows = $message_model->get_no_read_total($this->uid);
-        $total_pages = $page_num ? ceil($total_rows/$page_size) : ( $total_rows >= 0 ? 1 : 0 );
+        $total_pages = $page_num ? ceil($total_rows/$page_size) : ( $total_rows > 0 ? 1 : 0 );
         $this->success(
             array(
                 'list' => $no_read,
@@ -90,6 +90,17 @@ class ImessageController extends ApiBaseController
     }
 
     /**
+     * 获取未读消息总条数
+     */
+    public function no_read_msg_total_get() {
+        $this->check_token();
+        $total = D('Imessage')->get_no_read_total($this->uid);
+        $this->success(array(
+            'total' => $total
+        ));
+    }
+
+    /**
      * 获取最近联系人列表
      * im/message/rct_contacts
      */
@@ -97,8 +108,8 @@ class ImessageController extends ApiBaseController
         $this->check_token();
         $page_num = I('get.p', 1, 'intval');
         $page_size = I('get.ps', 10, 'intval');
-        $recent_concat_list = D('Imessage')->get_recent_contacts($this->uid); //$this->uid
-
+        $recent_concat_list = D('Imessage')->get_recent_contacts($this->uid);
+        echo D('Imessage')->get_recent_contacts_total($this->uid);
         $this->success($recent_concat_list);
     }
 

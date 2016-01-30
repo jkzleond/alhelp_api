@@ -11,7 +11,7 @@ use \Think\Model;
 use \Think\Model\RelationModel;
 
 class ImessageModel extends RelationModel
-{
+{   
     protected $_auto = array(
         array('add_time', 'date', Model::MODEL_INSERT, 'function', 'Y-m-d H:i:s')
     );
@@ -20,65 +20,51 @@ class ImessageModel extends RelationModel
      * 获取指定用户的最尽联系人
      */
     public function get_recent_contacts($uid, $page_num=1, $page_size=10) {
-        $get_rct_total_sql = <<<SQL
-        select count(distinct contact_id) as total from (
-              (
-                select id as message_id, to_id as contact_id from imessage
-                where from_member_id = '$uid' and to_id != '$uid'
-              )
-              union
-              (
-                select id as message_id, from_member_id as contact_id from imessage
-                where to_id = '$uid' and from_member_id != '$uid' and is_to_group != 1
-              )
-              union
-              (
-                select id as message_id, from_member_id as contact_id from imessage
-                where from_member_id != '$uid' and is_to_group = 1 and to_id in (
-                  select group_id from group_member where member_id = '31527'
-                )
-              )
-            ) rec_m
-SQL;
-        $count_result = $this->query($get_rct_total_sql);
-        $total_rows = !empty($count_result) ? $count_result[0]['total'] : 0;
-
-        if(!$total_rows) return null;
-
         $get_recent_message_id_sql = <<<SQL
         (
-          select max(rec_m.message_id) as message_id, rec_m.contact_id from (
+          select max(rec_m.message_id) as message_id, rec_m.contact_id, rec_m.is_to_group from (
                 (
-                  select id as message_id, to_id as contact_id from imessage
-                  where from_member_id = '$uid' and to_id != '$uid'
+                  select id as message_id, to_id as contact_id, is_to_group from imessage
+                  where from_member_id = '$uid' and to_id != '$uid' and type = 1
                 )
                 union
                 (
-                  select id as message_id, from_member_id as contact_id from imessage
-                  where to_id = '$uid' and from_member_id != '$uid' and is_to_group != 1
+                  select id as message_id, from_member_id as contact_id, is_to_group from imessage
+                  where to_id = '$uid' and from_member_id != '$uid' and is_to_group != 1 and type = 1
                 )
                 union
                 (
-                  select id as message_id, from_member_id as contact_id from imessage
+                  select id as message_id, to_id as contact_id, is_to_group from imessage
                   where from_member_id != '$uid' and is_to_group = 1 and to_id in (
-                    select group_id from group_member where member_id = '31527'
-                  )
+                    select group_id from group_member where member_id = '$uid'
+                  ) and type = 1
                 )
               ) rec_m
-          group by contact_id
-          order by message_id desc
+          group by contact_id, is_to_group
         )
 SQL;
-        
-       // $page = \Think\Page();
 
-        $concat_list = $this->field('rec_m.contact_id, mb.nickname, mb.avatar, m.content as message_content, m.mime_type, m.goods_id')
+        $concat_list = $this->field("rec_m.contact_id, rec_m.is_to_group, 
+          case when rec_m.is_to_group = 0 then 
+            mb.nickname
+          else
+            g.name
+          end as name,
+          case when rec_m.is_to_group = 0 then
+            mb.avatar
+          else
+            g.image
+          end as avatar, 
+          m.content as message_content, 
+          m.mime_type, 
+          m.goods_id")
                                 ->table($get_recent_message_id_sql)->alias('rec_m')
                                 ->join('left join imessage as m on m.id = rec_m.message_id')
-                                ->join('left join member as mb on mb.id = rec_m.contact_id')
+                                ->join('left join member as mb on mb.id = rec_m.contact_id and rec_m.is_to_group = 0')
+                                ->join('left join `group` as g on g.id = rec_m.contact_id and rec_m.is_to_group = 1')
                                 ->join('left join demand as d on d.id = m.goods_id')
                                 ->select();
-
+        //echo $this->getLastSql();
         if (!$concat_list) return null;
 
         foreach ($concat_list as &$concat) {
@@ -89,6 +75,36 @@ SQL;
 
         return $concat_list;
 
+    }
+
+    /**
+     * 获取最近联系人总数
+     * @param  int|string  $uid 用户ID
+     * @return int
+     */
+    public function get_recent_contacts_total($uid) {
+        $get_rct_total_sql = <<<SQL
+        select count(distinct contact_id, is_to_group) as total from (
+              (
+                select id as message_id, to_id as contact_id, is_to_group from imessage
+                where from_member_id = '$uid' and to_id != '$uid' and type = 1
+              )
+              union
+              (
+                select id as message_id, from_member_id as contact_id, is_to_group from imessage
+                where to_id = '$uid' and from_member_id != '$uid' and is_to_group != 1 and type =1
+              )
+              union
+              (
+                select id as message_id, to_id as contact_id, is_to_group from imessage
+                where from_member_id != '$uid' and is_to_group = 1 and to_id in (
+                  select group_id from group_member where member_id = '$uid'
+                ) and type = 1
+              )
+            ) rec_m
+SQL;
+        $count_result = $this->query($get_rct_total_sql);
+        return !empty($count_result) ? $count_result[0]['total'] : 0;
     }
 
     /**
@@ -109,19 +125,22 @@ SQL;
                 array(
                     'from_member_id' => $uid,
                     'to_id' => $to_id,
-                    'is_to_group' => 0
+                    'is_to_group' => 0,
+                    'type' => 1
                 ),
                 array(
                     'from_member_id' => $to_id,
                     'to_id' => $uid,
-                    'is_to_group' => 0
+                    'is_to_group' => 0,
+                    'type' => 1
                 ),
                 '_logic' => 'OR'
             );
         } else {
             $where = array(
                 'to_id' => $to_id,
-                'is_to_group' => 1
+                'is_to_group' => 1,
+                'type' => 1
             );
         }
 
@@ -131,7 +150,7 @@ SQL;
             $this->page($page_num, $page_size);
         }
 
-        $messages = $this->select();
+        $messages = $this->order('add_time desc')->select();
         return $messages;
     }
 
@@ -150,19 +169,22 @@ SQL;
                 array(
                     'from_member_id' => $uid,
                     'to_id' => $to_id,
-                    'is_to_group' => 0
+                    'is_to_group' => 0,
+                    'type' => 1
                 ),
                 array(
                     'from_member_id' => $to_id,
                     'to_id' => $uid,
-                    'is_to_group' => 0
+                    'is_to_group' => 0,
+                    'type' => 1
                 ),
                 '_logic' => 'OR'
             );
         } else {
             $where = array(
                 'to_id' => $to_id,
-                'is_to_group' => 1
+                'is_to_group' => 1,
+                'type' => 1
             );
         }
 
@@ -183,15 +205,17 @@ SQL;
         $this->alias('m')->join('left join group_member gm on gm.group_id = m.to_id and m.is_to_group = 1')
             ->where(array(
                 array(
-                    'to_id' => $uid,                          //非群
-                    'from_member_id' => array('neq', $uid),
-                    'is_to_group' => 0,
-                    'is_read' => 0
+                    'm.to_id' => $uid,                          //非群
+                    'm.from_member_id' => array('neq', $uid),
+                    'm.is_to_group' => 0,
+                    'm.is_read' => 0,
+                    'm.type' => 1
                 ),
                 array(
-                    'to_id' => array('in', $group_in),        //群
-                    'from_member_id' => array('neq', $uid),
-                    'is_to_group' => 1,
+                    'm.to_id' => array('in', $group_in),        //群
+                    'm.from_member_id' => array('neq', $uid),
+                    'm.is_to_group' => 1,
+                    'm.type' => 1,
                     '_string' => 'm.add_time > gm.last_read_time or gm.last_read_time is null' //群未读通过最后一次阅读群消息时间来标记
                 ),
                 '_logic' => 'OR'
@@ -221,7 +245,7 @@ SQL;
         else
         m.from_member_id
         end as from_member_id, m.add_time
-        ")->select();
+        ")->order('add_time desc')->select();
 
         return $no_read;
     }
@@ -240,15 +264,17 @@ SQL;
             ->join('left join group_member gm on gm.group_id = m.to_id and m.is_to_group = 1')
             ->where(array(
                 array(
-                    'to_id' => $uid,                          //非群
-                    'from_member_id' => array('neq', $uid),
-                    'is_to_group' => 0,
-                    'is_read' => 0
+                    'm.to_id' => $uid,                          //非群
+                    'm.from_member_id' => array('neq', $uid),
+                    'm.is_to_group' => 0,
+                    'm.is_read' => 0,
+                    'm.type' => 1
                 ),
                 array(
-                    'to_id' => array('in', $group_in),        //群
-                    'from_member_id' => array('neq', $uid),
-                    'is_to_group' => 1,
+                    'm.to_id' => array('in', $group_in),        //群
+                    'm.from_member_id' => array('neq', $uid),
+                    'm.is_to_group' => 1,
+                    'm.type' => 1,
                     '_string' => 'm.add_time > gm.last_read_time or gm.last_read_time is null'
                 ),
                 '_logic' => 'OR'

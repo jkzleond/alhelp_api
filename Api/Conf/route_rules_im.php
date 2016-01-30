@@ -10,6 +10,7 @@ return array(
 	'v1/im/message/:type/:to_id\d$' => 'Imessage/message', //POST:发悄悄话或发群聊|
 	'v1/im/message/history/:type/:to_id\d/[:p]/[:ps]' => 'Imessage/history',//GET:获取与某个用户或某个群的聊天记录
     'v1/im/message/no_read/[:p]/[:ps]' => 'Imessage/no_read_msg', //GET:获取未读消息
+    'v1/im/message/no_read_total$' => 'Imessage/no_read_msg_total', //GET:获取未读消息总条数
     'v1/im/message/mark_read/:type/:from_id$' => 'Imessage/mark_read', //PUT:将消息标记已读
 	'v1/im/message/rct_contacts/[:p]/[:ps]' => 'Imessage/recent_contacts' //GET:获取当前用户的最近联系人
 );
