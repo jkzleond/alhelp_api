@@ -128,7 +128,7 @@ class ImessageController extends ApiBaseController
             ))->setField('last_read_time', date('Y-m-d H:i:s'));
         }
 
-        if (!$mark_success) {
+        if ($mark_success === false) {
             $this->error(1500);
         }
 
