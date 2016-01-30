@@ -9,13 +9,6 @@ class ServiceController extends ApiBaseController {
 
 		$data = $this->get_request_data();
 
-		//验证手机验证吗
-		$verify = $data['verify'];
-		$verify_result = VerifySmsController::verify_check($verify);
-		if ($verify_result !== true) {
-			$this->error($verify_result);
-		}
-
 		$m = M("member");
 
 		$info = $m->getById($this->uid);

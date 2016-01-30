@@ -23,7 +23,7 @@ return array(
 	"v1/demands/:type/role/:role$" => array("Demand2/demands_get"),
 	"v1/demands/:type/role/:role/page/:page$" => array("Demand2/demands_get"),
 	"v1/demands/self/:type/role/:role/page/:page$" => array("Demand2/demands_get", "self=1"),
-	"v1/demands/:uid/:type/:role/:page$" => array("Demand2/demand_get"), // 获取指定ID用户的需求列表
+	"v1/demands/:uid/:type/:role/:page$" => array("Demand2/demands_get"), // 获取指定ID用户的需求列表
 	"v1/public/similar/:public_id$" => "Demand2/public_similar",
 	"v1/public/similar/:public_id/page/:page$" => "Demand2/public_similar",
 	"v1/articles/index$" => array("Information/index_get"),

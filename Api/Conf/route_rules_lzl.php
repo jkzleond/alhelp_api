@@ -20,7 +20,15 @@ return array(
 	"v1/talks/similarity/:id" => "Talks/talk_similarity", //获取相似度的说说
 	"v1/talks/list/master/page/:page" => "Talks/talk_mslist", //获取我的说说列表
 	"v1/talks/list/page/:page" => "Talks/talk_list", //获取我的说说列表
-	"v1/talks/list$" => "Talks/talk_list_get", //获取我的说说列表    
+	"v1/talks/list$" => function(){
+		if( in_array(strtoupper(I('server.REQUEST_METHOD')), array('GET','POST')) ) {
+			$_GET[C('VAR_CONTROLLER')] = 'Talks';
+			$_GET[C('VAR_ACTION')] = 'talk_list_get';
+			return true;
+		} else {
+			send_http_status(404);
+		}	
+	},//获取我的说说列表    
 	"v1/talks/list/fans/page/:page" => "Talks/talk_fans_list_get", //获取我的粉丝说说列表
 	"v1/talks/list/fans$" => "Talks/talk_fans_list_get", //获取我的粉丝说说列表
 	"v1/talks/list/follow/page/:page" => "Talks/talk_follow_list_get", //获取我的粉丝说说列表

@@ -97,7 +97,7 @@ class FansController extends ApiBaseController {
 				"LEFT JOIN pillow_talk_time t ON ((t.member_id_s = f.to_member_id AND t.member_id_b = f.from_member_id) OR(t.member_id_b = f.to_member_id AND t.member_id_s = f.from_member_id))",
 				"INNER JOIN member m on f.to_member_id = m.id",
 			),
-			'where' => array("f.from_member_id" => '12673'),
+			'where' => array("f.from_member_id" => $uid),
 			'field' => "UNIX_TIMESTAMP(f.add_time) as add_time,m.id AS to_member_id,m.nickname AS from_member_nickname,max(t.time) AS last_pillow_talk_time, IF(f2.id IS NOT NULL, '1', '0') as is_mutual",
 			'order' => "is_mutual desc, t.time desc",
 			'group' => "f.id",
@@ -126,7 +126,7 @@ class FansController extends ApiBaseController {
 
 		foreach ($data as &$value) {
 			$value["avatar"] = GetSmallAvatar($value['to_member_id']);
-			$value["community"] = D("Community")->communities($value["to_member_id"]);
+			//$value["community"] = D("Community")->communities($value["to_member_id"]);
 		}
 
 		$data = array(

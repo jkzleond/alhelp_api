@@ -10,7 +10,7 @@ class Demand2Model extends BaseModel {
 
 	public function demands($demand_type = 1, $role_type = 1, $page_num = 1, $uid = null) {
 		$page_num = ($page_num == 0 ? 1 : $page_num);
-		if (! $uid) {
+		if (!$uid) {
 			$condition = array (
 					'demand_type' => $demand_type,
 					'role_type' => $role_type 
