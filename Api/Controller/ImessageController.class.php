@@ -109,7 +109,10 @@ class ImessageController extends ApiBaseController
         $page_num = I('get.p', 1, 'intval');
         $page_size = I('get.ps', 10, 'intval');
         $recent_concat_list = D('Imessage')->get_recent_contacts($this->uid);
-        $this->success($recent_concat_list);
+        $this->success(array(
+            'list' => $recent_concat_list,
+            'count' => count($recent_concat_list)
+        ));
     }
 
     /**

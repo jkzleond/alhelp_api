@@ -116,6 +116,8 @@ class GroupController extends ApiBaseController {
 	 * route: im/groups/[:uid]/[:is_owner]
 	 */
 	public function group_list_get() {
+		$this->check_token();
+
 		$group_model = M('Group');
 		$page_num = I('get.p', 1, 'intval');
 		$page_size = I('get.ps', 10, 'intval');
@@ -134,8 +136,12 @@ class GroupController extends ApiBaseController {
         }
 
 		$filters = $this->get_request_data('filters');
-		empty($filters) or $options['where'] = array_merge($options['where'], $filters);
-        
+		if ( !empty($filters) and is_array($options['where']) ) {
+			$options['where'] = array_merge($options);
+		} elseif ( !empty($filters) ) {
+			$options['where'] = $filters;
+		}
+
         $group_model->options = $options;
 		$group_total = $group_model->table(array('group' => 'g'))->count();
         
@@ -144,8 +150,16 @@ class GroupController extends ApiBaseController {
         
         $group_model->options = $options; //重新设置options
 		$group_list = $group_model->table(array('group' => 'g'))
-		        ->field('g.*, m.nickname as owner_nickname')
+		        ->field("g.*, m.nickname as owner_nickname, if(msg.no_read_count is null, '0', msg.no_read_count) as no_read_count")
 				->join('left join member m on m.id = g.owner_id')
+				->join("left join (
+					select gm.group_id, count( case when msg.from_member_id != '{$this->uid}' and (msg.add_time > gm.last_read_time or gm.last_read_time is null ) then 1 end ) as no_read_count
+					from imessage as msg
+					left join group_member as gm on gm.group_id = msg.to_id 
+					and msg.is_to_group = 1
+					where gm.member_id = '{$this->uid}'
+					group by gm.group_id 
+				) msg on msg.group_id = g.id")
 				->order('id desc')
 				->limit($page->firstRow, $page->listRows)->select();
 

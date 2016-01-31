@@ -230,7 +230,7 @@ SQL;
             $this->page($page_num, $page_size);
         }
 
-        $no_read = $this->field("m.id, if(m.is_to_group = 1, '1','0') as is_to_group, if(m.is_read = 1, '1', '0') as is_read,
+        $no_read = $this->field("m.id, m.mime_type, if(m.is_to_group = 1, '1','0') as is_to_group, if(m.is_read = 1, '1', '0') as is_read,
         case when length(m.content) > 10 and m.mime_type = 0 then
         concat(left(m.content, '10'), '...')
         when m.mime_type = 0 then

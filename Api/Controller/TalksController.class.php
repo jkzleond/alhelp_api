@@ -1162,6 +1162,7 @@ class TalksController extends ApiBaseController {
 
 		if(empty($talk)) $this->error(4004);
 
+		//TODO 这里需要正确的圈主查询逻辑
 		$community = M('community')->field('member_id')->where(array('id' => $talk['community_id']))->find();
 
 		if ($talk_model->member_id != $this->uid and $community and $community['member_id'] != $this->uid) {
