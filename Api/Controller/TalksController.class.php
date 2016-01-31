@@ -895,7 +895,7 @@ class TalksController extends ApiBaseController {
 	}
 	
 	// 点赞
-	public function praise_get() {
+	public function praise_put() {
 		$this->check_token ();
 		$table = 'praise';
 		$table_name = 'member_post';
@@ -1156,7 +1156,7 @@ class TalksController extends ApiBaseController {
 	public function talk_delete() {
 		$this->check_token();
 		$id = I('get.id', 0, 'intval');
-		if($id) $this->error(1001);
+		if(!$id) $this->error(1001);
 		$talk_model = M('member_post');
 		$talk = $talk_model->find($id);
 

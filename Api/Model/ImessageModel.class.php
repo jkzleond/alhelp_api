@@ -22,29 +22,32 @@ class ImessageModel extends RelationModel
     public function get_recent_contacts($uid, $page_num=1, $page_size=10) {
         $get_recent_message_id_sql = <<<SQL
         (
-          select max(rec_m.message_id) as message_id, rec_m.contact_id, rec_m.is_to_group from (
+          select max(rec_m.message_id) as message_id, rec_m.contact_id, rec_m.is_to_group,
+          count( case when rec_m.is_read = 0 then 1 end ) as no_read_count
+           from (
                 (
-                  select id as message_id, to_id as contact_id, is_to_group from imessage
-                  where from_member_id = '$uid' and to_id != '$uid' and type = 1
+                  select id as message_id, to_id as contact_id, is_to_group, 1 as is_read from imessage
+                  where from_member_id = '$uid' and to_id != '$uid' and is_to_group != 1 and type = 1
                 )
                 union
                 (
-                  select id as message_id, from_member_id as contact_id, is_to_group from imessage
+                  select id as message_id, from_member_id as contact_id, is_to_group, is_read from imessage
                   where to_id = '$uid' and from_member_id != '$uid' and is_to_group != 1 and type = 1
                 )
                 union
                 (
-                  select id as message_id, to_id as contact_id, is_to_group from imessage
-                  where from_member_id != '$uid' and is_to_group = 1 and to_id in (
-                    select group_id from group_member where member_id = '$uid'
-                  ) and type = 1
+                  select m.id as message_id, m.to_id as contact_id, m.is_to_group,
+                  if( m.add_time > gm.last_read_time or gm.last_read_time is null, '0', '1' ) as is_read
+                  from imessage as m
+                  left join group_member as gm on gm.group_id = m.to_id and m.is_to_group = 1 
+                  where m.is_to_group = 1 and m.type = 1 and gm.member_id = '$uid' 
                 )
               ) rec_m
           group by contact_id, is_to_group
         )
 SQL;
 
-        $concat_list = $this->field("rec_m.contact_id, rec_m.is_to_group, 
+        $concat_list = $this->field("rec_m.contact_id, rec_m.is_to_group, rec_m.no_read_count,
           case when rec_m.is_to_group = 0 then 
             mb.nickname
           else
@@ -54,17 +57,19 @@ SQL;
             mb.avatar
           else
             g.image
-          end as avatar, 
-          m.content as message_content, 
+          end as avatar,
+          case when rec_m.is_to_group = 1 then
+            concat(mb.nickname, ':', m.content)
+          else
+            m.content
+          end as msg_content, 
           m.mime_type, 
           m.goods_id")
                                 ->table($get_recent_message_id_sql)->alias('rec_m')
                                 ->join('left join imessage as m on m.id = rec_m.message_id')
-                                ->join('left join member as mb on mb.id = rec_m.contact_id and rec_m.is_to_group = 0')
+                                ->join('left join member as mb on (mb.id = rec_m.contact_id and rec_m.is_to_group = 0) or (mb.id = m.from_member_id and rec_m.is_to_group = 1)')
                                 ->join('left join `group` as g on g.id = rec_m.contact_id and rec_m.is_to_group = 1')
-                                ->join('left join demand as d on d.id = m.goods_id')
                                 ->select();
-        //echo $this->getLastSql();
         if (!$concat_list) return null;
 
         foreach ($concat_list as &$concat) {

@@ -38,7 +38,7 @@ return array(
 	"v1/talks/listby/:type/:type_id/page/:page" => "Talks/talk_where", //通过大学、学院、专业获取说说列表	
 	"v1/talks/listby/:type/:type_id" => "Talks/talk_where", //通过大学、学院、专业获取说说列表
 	"v1/talks/:id/comment" => "Talks/talks_comment", //回复说说
-	"v1/talks/:id/praise" => "Talks/praise", //说说点赞
+	"v1/talks/:id/praise" => "Talks/praise", //PUT:说说点赞
 	"v1/talks/:id/top" => "Talks/top", //说说置顶
 	"v1/talks/:id/top_off" => array("Talks/top", "is_top=0"), //取消说说置顶
 	"v1/talks/:id/hot" => "Talks/hot", //说说设置热门
