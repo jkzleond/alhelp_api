@@ -73,10 +73,12 @@ class ImessageController extends ApiBaseController
      */
     public function no_read_msg_get() {
         $this->check_token();
+        $type = I('get.type', null);
+        $from_id = I('get.from_id', null, 'intval');
         $page_num = I('get.p', null, 'intval');
         $page_size = I('get.ps', 10, 'intval');
         $message_model = D('Imessage');
-        $no_read = $message_model->get_no_read($this->uid, $page_num, $page_size);
+        $no_read = $message_model->get_no_read($this->uid, $type, $from_id, $page_num, $page_size);
         $total_rows = $message_model->get_no_read_total($this->uid);
         $total_pages = $page_num ? ceil($total_rows/$page_size) : ( $total_rows > 0 ? 1 : 0 );
         $this->success(
@@ -116,6 +118,67 @@ class ImessageController extends ApiBaseController
     }
 
     /**
+     * 获取好友列表
+     */
+    public function friend_list_get() {
+        $follow_model = M('Follow');
+        $uid = I("get.uid", 0, 'intval');
+
+        if ($uid <= 0) {
+            $this->check_token();
+            $uid = $this->uid;
+        }
+
+        //构造sql
+        //互相关注is_mutual
+        $options = array(
+            'alias' => 'f',
+            'join' => array(
+                "LEFT JOIN follow f2 ON f2.to_member_id = f.from_member_id AND f2.from_member_id = f.to_member_id",
+                "INNER JOIN member m on f.to_member_id = m.id",
+            ),
+            'where' => array("f.from_member_id" => $uid),
+            'field' => "UNIX_TIMESTAMP(f.add_time) as add_time,m.id AS member_id,m.nickname, IF(f2.id IS NOT NULL, '1', '0') as is_mutual",
+            'order' => "nickname desc"
+        );
+
+        $page_num = I("get.page", 1, 'intval');
+        $page_size = I('get.ps', 20, 'intval');
+
+        $follow_model->options = $options;
+        unset($follow_model->options['group']);
+        unset($follow_model->options['field']);
+        $total_rows = $follow_model->count();
+        $total_pages = 1;
+
+        if ($page_num) {
+            $follow_model->page($page_num, $page_size);
+            $total_pages = ceil($total_rows / $page_size);
+        }
+
+        $data = $follow_model->select($options);
+
+        foreach ($data as &$value) {
+            $value["avatar"] = GetSmallAvatar($value['to_member_id']);
+            //$value["community"] = D("Community")->communities($value["to_member_id"]);
+        }
+
+        $data = array(
+            'list' => $data,
+            'count' => count($data),
+            'total_pages' => $total_pages,
+            'total_rows' => $total_rows,
+            'next_page' => null
+        );
+
+        if ($total_pages > 1 && $page_num < $total_pages) {
+            $data['next_page'] = $this->url("/v1/follow/page/" . ($page_num + 1));
+        }
+
+        $this->success($data);
+    }
+
+    /**
      * 标记已读
      */
     public function mark_read_put() {
@@ -146,5 +209,27 @@ class ImessageController extends ApiBaseController
         }
 
         $this->success();
+    }
+
+    /**
+     * 检查是否有新状态检查(长连接,检查新消息等,有新状态则调用相应接口获取数据)
+     */
+    public function sync_check() {
+        set_time_limit(100);
+        $this->check_token();
+        $last_time = I('get._', 0, 'intval');
+        $last_time = date('Y-m-d H:i:s', $last_time);
+        $start_time = time();
+        while ( true ) {
+            $elapsed = time() - $start_time;
+            $no_read_total = D('Imessage')->get_no_read_total($this->uid, $last_time);
+            if ($no_read_total or $elapsed >= 60) {
+                $this->success(array(
+                    'has_new' => $no_read_total > 0,
+                    '_' => time()
+                ));
+            }
+            sleep(1);
+        }
     }
 }

@@ -201,30 +201,57 @@ SQL;
     /**
      * 获取发给某用户的未读信息
      * @param $uid
-     * @param $page_num
-     * @param $page_size
+     * @param string|null $type
+     * @param string|int|null $from_id
+     * @param int $page_num
+     * @param int $page_size
      * @return array
      */
-    public function get_no_read($uid, $page_num=1, $page_size=10) {
+    public function get_no_read($uid, $type=null, $from_id=null, $page_num=1, $page_size=10) {
         $group_in = M('group_member')->where(array('member_id' => $uid))->getField('group_id', true);
-        $this->alias('m')->join('left join group_member gm on gm.group_id = m.to_id and m.is_to_group = 1')
-            ->where(array(
-                array(
-                    'm.to_id' => $uid,                          //非群
-                    'm.from_member_id' => array('neq', $uid),
-                    'm.is_to_group' => 0,
-                    'm.is_read' => 0,
-                    'm.type' => 1
-                ),
-                array(
-                    'm.to_id' => array('in', $group_in),        //群
-                    'm.from_member_id' => array('neq', $uid),
-                    'm.is_to_group' => 1,
-                    'm.type' => 1,
-                    '_string' => 'm.add_time > gm.last_read_time or gm.last_read_time is null' //群未读通过最后一次阅读群消息时间来标记
-                ),
+
+        $single_condition = array(
+            'm.to_id' => $uid,                          //非群
+            'm.is_to_group' => 0,
+            'm.is_read' => 0,
+            'm.type' => 1
+        );
+        $group_condition = array(
+            'm.to_id' => array('in', $group_in),        //群
+            'm.is_to_group' => 1,
+            'm.type' => 1,
+            '_string' => 'm.add_time > gm.last_read_time or gm.last_read_time is null' //群未读通过最后一次阅读群消息时间来标记
+        );
+        $condition = null;
+
+        if ($from_id) {
+            $single_condition['m.from_member_id'] = array(
+                array('neq', $uid),
+                array('eq', $from_id)
+            );
+            $group_condition['m.from_member_id'] = array(
+                array('neq', $uid),
+                array('eq', $from_id)
+            );
+        } else {
+            $single_condition['m.from_member_id'] = array('neq', $uid);
+            $group_condition['m.from_member_id'] = array('neq', $uid);
+        }
+
+        if ($type == 'single') {
+            $condition = $single_condition;
+        } elseif ($type == 'group') {
+            $condition = $group_condition;
+        } else {
+            $condition = array(
+                $single_condition,
+                $group_condition,
                 '_logic' => 'OR'
-            ));
+            );
+        }
+
+        $this->alias('m')->join('left join group_member gm on gm.group_id = m.to_id and m.is_to_group = 1')
+            ->where($condition);
 
         if ($page_num) {
             $this->page($page_num, $page_size);
@@ -257,33 +284,41 @@ SQL;
 
     /**
      * 获取未读总条数
-     * @param $uid
+     * @param string|int $uid
+     * @param string     $start_time 起始时间
      * @return int
      */
-    public function get_no_read_total($uid) {
+    public function get_no_read_total($uid, $start_time=null) {
         $group_in = M('group_member')->where(array('member_id' => $uid))->getField('group_id', true);
-        $last_read_time = M('group_member')->where(array(
-            'member_id' => $uid
-        ))->getField('last_read_time');
+
+        $condition = array(
+            array(
+                'm.to_id' => $uid,                          //非群
+                'm.from_member_id' => array('neq', $uid),
+                'm.is_to_group' => 0,
+                'm.is_read' => 0,
+                'm.type' => 1
+            ),
+            array(
+                'm.to_id' => array('in', $group_in),        //群
+                'm.from_member_id' => array('neq', $uid),
+                'm.is_to_group' => 1,
+                'm.type' => 1,
+                '_string' => 'm.add_time > gm.last_read_time or gm.last_read_time is null'
+            ),
+            '_logic' => 'OR'
+        );
+
+        if (!empty($start_time)) {
+            $condition = array(
+                $condition,
+                'm.add_time' => array('gt', $start_time)
+            );
+        }
+
         $total = $this->table(array('imessage' => 'm'))
             ->join('left join group_member gm on gm.group_id = m.to_id and m.is_to_group = 1')
-            ->where(array(
-                array(
-                    'm.to_id' => $uid,                          //非群
-                    'm.from_member_id' => array('neq', $uid),
-                    'm.is_to_group' => 0,
-                    'm.is_read' => 0,
-                    'm.type' => 1
-                ),
-                array(
-                    'm.to_id' => array('in', $group_in),        //群
-                    'm.from_member_id' => array('neq', $uid),
-                    'm.is_to_group' => 1,
-                    'm.type' => 1,
-                    '_string' => 'm.add_time > gm.last_read_time or gm.last_read_time is null'
-                ),
-                '_logic' => 'OR'
-            ))
+            ->where($condition)
             ->count();
         return $total;
     }

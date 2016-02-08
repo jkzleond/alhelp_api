@@ -155,10 +155,10 @@ class GroupController extends ApiBaseController {
 				->join("left join (
 					select gm.group_id, count( case when msg.from_member_id != '{$this->uid}' and (msg.add_time > gm.last_read_time or gm.last_read_time is null ) then 1 end ) as no_read_count
 					from imessage as msg
-					left join group_member as gm on gm.group_id = msg.to_id 
+					left join group_member as gm on gm.group_id = msg.to_id
 					and msg.is_to_group = 1
 					where gm.member_id = '{$this->uid}'
-					group by gm.group_id 
+					group by gm.group_id
 				) msg on msg.group_id = g.id")
 				->order('id desc')
 				->limit($page->firstRow, $page->listRows)->select();

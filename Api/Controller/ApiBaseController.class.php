@@ -256,6 +256,22 @@ class ApiBaseController extends RestController {
 	public function _empty() {
 		exit($this->sendHttpStatus(404));
 	}
+
+	/**
+	 * 覆盖父类的response方法, 使api支持jsonp
+	 * @param mixed $data
+	 * @param string $type
+	 * @param int $code
+	 */
+	protected function response($data, $type = '', $code = 200) {
+		$this->sendHttpStatus($code);
+		$callback = I('get.callback');
+		$encoded_data = $this->encodeData($data, $type);
+		if ($callback) {
+			$encoded_data = $callback.'('.$encoded_data.');';
+		}
+		exit($encoded_data);
+	}
 	
 	/**
 	 * 通用分页列表数据集获取方法

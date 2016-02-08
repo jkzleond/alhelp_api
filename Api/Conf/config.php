@@ -1,4 +1,4 @@
 <?php
 return array(
-	'SESSION_AUTO_START' => false,
+	'SESSION_AUTO_START' => false
 );
