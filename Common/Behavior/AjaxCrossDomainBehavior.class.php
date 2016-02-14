@@ -22,7 +22,7 @@ class AjaxCrossDomainBehavior
         $domain = empty($url_parts['port']) ? $url_parts['scheme'].'://'.$url_parts['host'] : $url_parts['scheme'].'://'.$url_parts['host'].':'.$url_parts['port'];
         $allow_list = C('CROSS_DOMAIN_ALLOW');
         if (in_array($domain, $allow_list) or in_array('*', $allow_list) or $allow_list == '*') {
-            header('Access-Control-Allow-Headers:x-auth-token');
+            header('Access-Control-Allow-Headers:x-auth-token, content-type');
             header('Access-Control-Allow-Origin:'.$domain);
         }
 

@@ -69,10 +69,16 @@ SQL;
                                 ->join('left join imessage as m on m.id = rec_m.message_id')
                                 ->join('left join member as mb on (mb.id = rec_m.contact_id and rec_m.is_to_group = 0) or (mb.id = m.from_member_id and rec_m.is_to_group = 1)')
                                 ->join('left join `group` as g on g.id = rec_m.contact_id and rec_m.is_to_group = 1')
+                                ->order('m.add_time desc')
                                 ->select();
         if (!$concat_list) return null;
 
         foreach ($concat_list as &$concat) {
+            //非群联系人头像
+            if ($concat['is_to_group'] == 0) {
+                $concat['avatar'] = GetSmallAvatar($concat['concat_id']);
+            }
+
             if ( $concat['goods_id'] ){
                 $concat['goods'] = D('Demand2')->get_by_id($concat['goods_id']);
             }
@@ -238,7 +244,8 @@ SQL;
             $group_condition['m.from_member_id'] = array('neq', $uid);
         }
 
-        if ($type == 'single') {
+        if ($type == 'single' or empty($group_in)) {
+            //获取用户发来的未读消息,或用户没有加入任何群
             $condition = $single_condition;
         } elseif ($type == 'group') {
             $condition = $group_condition;
@@ -299,15 +306,18 @@ SQL;
                 'm.is_read' => 0,
                 'm.type' => 1
             ),
-            array(
+            '_logic' => 'OR'
+        );
+
+        if ( !empty($group_in) ){
+            $condition[] = array(
                 'm.to_id' => array('in', $group_in),        //群
                 'm.from_member_id' => array('neq', $uid),
                 'm.is_to_group' => 1,
                 'm.type' => 1,
                 '_string' => 'm.add_time > gm.last_read_time or gm.last_read_time is null'
-            ),
-            '_logic' => 'OR'
-        );
+            );
+        }
 
         if (!empty($start_time)) {
             $condition = array(

@@ -323,6 +323,7 @@ class UserController extends ApiBaseController {
 			}
 			
 			if ($user) {
+				$user['avatar'] = GetSmallAvatar($user['id']);
 				$this->return_user_info ( $user );
 			}
 		}
@@ -718,7 +719,7 @@ class UserController extends ApiBaseController {
 					'phone' => $user['phone']
 				), 'json');
 			}
-			
+
 			$result = $this->create_token ( $user );
 			if ($result) {
 				$user ['_auth-token_'] = $result;

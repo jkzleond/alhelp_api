@@ -16,6 +16,37 @@ class GroupModel extends RelationModel {
     );
 
     /**
+     * 获取群成员列表
+     * @param $gid
+     * @param $page_num
+     * @param $page_size
+     * @return array
+     */
+    public function getMembers($gid, $page_num=1, $page_size=10) {
+        $group_member_model = M('group_member');
+        $group_member_list = $group_member_model->alias('gm')
+            ->field('gm.member_id, m.nickname')
+            ->join('left join member m on m.id = gm.member_id')
+            ->where(array('group_id' => $gid))
+            ->order('m.nickname asc')
+            ->select();
+        foreach ($group_member_list as &$member) {
+            $member['avatar'] = GetSmallAvatar($member['member_id']);
+        }
+        return $group_member_list;
+    }
+
+    /**
+     * 获取群成员总数
+     * @param $gid
+     * @return int
+     */
+    public function getMembersTotal($gid) {
+        $total = M('group_member')->where(array('group_id' => $gid))->count();
+        return (int)$total;
+    }
+
+    /**
      * 添加群成员
      * @param $gid      群ID
      * @param $uid_list 成员ID列表

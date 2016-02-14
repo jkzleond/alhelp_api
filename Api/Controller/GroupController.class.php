@@ -184,6 +184,31 @@ class GroupController extends ApiBaseController {
 	}
 
 	/**
+	 * 获取群成员列表
+	 */
+	public function member_list_get() {
+		$gid = I('get.id', null, 'intval');
+		if (!$gid) {
+			$this->error(1001);
+		}
+		$page_num = I('get.p', null, 'intval');
+		$page_size = I('get.ps', null, 'intval');
+
+		$member_list = D('Group')->getMembers($gid, $page_num, $page_size);
+		$members_total = D('Group')->getMembersTotal($gid);
+		$page_total = 1;
+		if ($page_num) {
+			$page_total = ceil($members_total / $page_size);
+		}
+		$this->success(array(
+			'list' => $member_list,
+			'count' => count($member_list),
+			'total' => $members_total,
+			'page_total' => $page_total
+		));
+	}
+
+	/**
 	 * 添加群成员
 	 * route: im/group/:id\d/member
 	 */
