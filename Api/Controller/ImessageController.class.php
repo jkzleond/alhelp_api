@@ -39,7 +39,17 @@ class ImessageController extends ApiBaseController
 
         if (!$success) $this->error(1500);
 
-        $this->success();
+        $this->success(array(
+            'id' => $message->getLastInsID(),
+            'content' => $message_info['content'],
+            'mime_type' => $message_info['mime_type'],
+            'type' => 1,
+            'is_to_group' => $type = 'single' ? 0 : 1,
+            'from_member_id' => $this->uid,
+            'to_id' => $to_id,
+            'is_read' => 0,
+            'add_time' => date('Y-m-d H:i:s')
+        ));
     }
 
     /**

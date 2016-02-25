@@ -162,6 +162,16 @@ SQL;
         }
 
         $messages = $this->order('add_time desc')->select();
+
+        //获取相关用户和群的信息
+        foreach ($messages as &$message) {
+            $from_member = M('member')->find($message['from_member_id']);
+            if ( !empty($from_member) ) {
+                $from_member['avatar'] = GetSmallAvatar($from_member['id']);
+            }
+            $message['from_member'] = $from_member;
+        }
+
         return $messages;
     }
 

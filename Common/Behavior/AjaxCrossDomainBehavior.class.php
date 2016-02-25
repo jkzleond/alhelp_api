@@ -24,6 +24,7 @@ class AjaxCrossDomainBehavior
         if (in_array($domain, $allow_list) or in_array('*', $allow_list) or $allow_list == '*') {
             header('Access-Control-Allow-Headers:x-auth-token, content-type');
             header('Access-Control-Allow-Origin:'.$domain);
+            header('Access-Control-Allow-Methods:GET,POST,PUT,DELETE');
         }
 
         //响应OPTIONS请求
