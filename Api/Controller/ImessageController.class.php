@@ -16,6 +16,7 @@ class ImessageController extends ApiBaseController
      * im/message/:type/:to_id\d
      */
     public function message_post() {
+        $this->success();
         $this->check_token();
         $to_id = I('get.to_id', null, 'intval');
         if (!$to_id) {
