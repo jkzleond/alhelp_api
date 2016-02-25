@@ -169,6 +169,7 @@ class GroupController extends ApiBaseController {
 				'next_page' => null,
 				'total_rows' => $page->totalRows,
 				'total_pages' => $page->totalPages,
+				'count' => 0,
 				'list' => null
 			));
 		} else {
@@ -178,6 +179,7 @@ class GroupController extends ApiBaseController {
 				'next_page' => $page_num == $page->totalPages ? null : $url.'?p='.($page_num + 1).'&ps='.$page_size,
 				'total_rows' => $page->totalRows,
                 'total_pages' => $page->totalPages,
+				'count' => count($group_list),
 				'list' => $group_list
 			));
 		}
