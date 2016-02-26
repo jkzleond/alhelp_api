@@ -76,7 +76,7 @@ SQL;
         foreach ($concat_list as &$concat) {
             //非群联系人头像
             if ($concat['is_to_group'] == 0) {
-                $concat['avatar'] = GetSmallAvatar($concat['concat_id']);
+                $concat['avatar'] = GetSmallAvatar($concat['contact_id']);
             }
 
             if ( $concat['goods_id'] ){
