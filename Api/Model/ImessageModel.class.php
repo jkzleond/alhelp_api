@@ -161,7 +161,7 @@ SQL;
             $this->page($page_num, $page_size);
         }
 
-        $messages = $this->order('add_time desc')->select();
+        $messages = $this->order('add_time asc')->select();
 
         //获取相关用户和群的信息
         foreach ($messages as &$message) {

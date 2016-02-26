@@ -39,7 +39,7 @@ class ImessageController extends ApiBaseController
 
         if (!$success) $this->error(1500);
 
-        $this->success(array(
+        $new_msg = array(
             'id' => $message->getLastInsID(),
             'content' => $message_info['content'],
             'mime_type' => $message_info['mime_type'],
@@ -49,7 +49,14 @@ class ImessageController extends ApiBaseController
             'to_id' => $to_id,
             'is_read' => 0,
             'add_time' => date('Y-m-d H:i:s')
-        ));
+        );
+
+        $from_member = M('member')->field('id, nickname, avatar')->find($this->uid);
+        $from_member['avatar'] = GetSmallAvatar($this->uid);
+
+        $new_msg['from_member'] = $from_member;
+
+        $this->success($new_msg);
     }
 
     /**
