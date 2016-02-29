@@ -64,7 +64,8 @@ SQL;
             m.content
           end as msg_content, 
           m.mime_type, 
-          m.goods_id")
+          m.goods_id,
+          m.add_time as msg_time")
                                 ->table($get_recent_message_id_sql)->alias('rec_m')
                                 ->join('left join imessage as m on m.id = rec_m.message_id')
                                 ->join('left join member as mb on (mb.id = rec_m.contact_id and rec_m.is_to_group = 0) or (mb.id = m.from_member_id and rec_m.is_to_group = 1)')
