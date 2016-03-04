@@ -233,13 +233,20 @@ class GroupController extends ApiBaseController {
 	 * route: im/group/:id\d/member
 	 */
 	public function member_delete() {
+		$this->check_token();
 		$gid = I('get.id', null, 'intval');
 		if (!$gid) {
 			$this->error('1001');
 		}
 		$member_id_list = $this->get_request_data('member_ids');
-		$group = D('Group');
-		$success = $group->removeMembers($gid, $member_id_list);
+		$group_model = D('Group');
+		$group = $group_model->field('owner_id')->find($gid);
+
+		if ($group['owner_id'] != $this->uid and (count($member_id_list) != 1 or $member_id_list[0] != $this->uid)) {
+			$this->error('1501');
+		}
+
+		$success = $group_model->removeMembers($gid, $member_id_list);
 		if (!$success) $this->error('1500');
 		$this->success(array(
 			'member_ids' => $member_id_list
