@@ -38,6 +38,44 @@ class UploadController extends ApiBaseController {
 		$this->error ( 1417 );
 	}
 
+	/**
+	 * 文件上传
+	 */
+	public function file_post() {
+		$this->check_token ();
+		$type = I('get.p', 'normal');
+		$uid =  $this->uid;
+		$config = C ( 'DOWNLOAD_UPLOAD' );
+		$config['rootPath'] = $config['rootPath'].$type;
+		$upload = new Upload ( $config );
+
+		$infos = $upload->upload ();
+		// var_dump($infos);
+		if (! $infos) {
+			$this->errorMsg ( '1400', $upload->getError () );
+		} else {
+			$tmp=array();
+			foreach ( $infos as &$info ) {
+				$id = $this->saveFileInfo ( $uid, $info );
+				$info ['id'] = $id;
+				$info ['status'] = 1;
+				$file_path = null;
+				//$file_path = $info ['savepath'].$info ['savename'];
+				$filename = empty ( $file_path ) ? $info ['sha1'] . $info['ext'] : $file_path;
+				$file_url = 'http://image.alhelp.net/attachments/'.$type.'/'.$filename;
+				$info ['url'] = $file_url;
+				if ($id === false) {
+					$info ['status'] = 0;
+					$info ['id'] = null;
+				}
+				$tmp[]=$info;
+			}
+			$this->success ( $tmp );
+		}
+
+		$this->error ( 1417 );
+	}
+
 	public function saveFileInfo($uid, $info) {
 		$model = M ( "attachments" );
 		$values ["member_id"] = $uid;

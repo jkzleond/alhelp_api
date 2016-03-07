@@ -252,5 +252,4 @@ class GroupController extends ApiBaseController {
 			'member_ids' => $member_id_list
 		));
 	}
-
 }

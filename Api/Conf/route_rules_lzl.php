@@ -16,7 +16,8 @@ return array(
 	
 	
     "v1/upload/image" => "Index/upload_image", //上传图片	
-		
+    "v1/upload$" => "Upload/file", //POST:上传文件
+
 	"v1/talks/similarity/:id" => "Talks/talk_similarity", //获取相似度的说说
 	"v1/talks/list/master/page/:page" => "Talks/talk_mslist", //获取我的说说列表
 	"v1/talks/list/page/:page" => "Talks/talk_list", //获取我的说说列表

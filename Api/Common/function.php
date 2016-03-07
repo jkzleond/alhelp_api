@@ -35,3 +35,4 @@ function int_to_string(&$data, $map = array('gender'=>array(1=>'男',0=>'女'),'
 	}
 	return $data;
 }
+

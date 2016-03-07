@@ -12,7 +12,8 @@ use \Think\Model\RelationModel;
 class GroupModel extends RelationModel {
 
     protected $_auto = array(
-        array('add_time', 'date', self::MODEL_INSERT, 'function', 'Y-m-d H:i:s')
+        array('add_time', 'date', self::MODEL_INSERT, 'function', 'Y-m-d H:i:s'),
+        array('image', 'http://api.alhelp.net/images/chatq.jpg', self::MODEL_BOTH)
     );
 
     /**
