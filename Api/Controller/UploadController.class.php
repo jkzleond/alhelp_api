@@ -59,10 +59,10 @@ class UploadController extends ApiBaseController {
 				$id = $this->saveFileInfo ( $uid, $info );
 				$info ['id'] = $id;
 				$info ['status'] = 1;
-				$file_path = null;
-				//$file_path = $info ['savepath'].$info ['savename'];
-				$filename = empty ( $file_path ) ? $info ['sha1'] . $info['ext'] : $file_path;
-				$file_url = 'http://image.alhelp.net/attachments/'.$type.'/'.$filename;
+				//$file_path = null;
+				$file_path = $info ['savepath'].$info ['savename'];
+				//$filename = empty ( $file_path ) ? $info ['sha1'] . $info['ext'] : $file_path;
+				$file_url = 'http://image.alhelp.net/attachments/'.$file_path;
 				$info ['url'] = $file_url;
 				if ($id === false) {
 					$info ['status'] = 0;
