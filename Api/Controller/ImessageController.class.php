@@ -43,6 +43,7 @@ class ImessageController extends ApiBaseController
             'id' => $message->getLastInsID(),
             'content' => $message_info['content'],
             'mime_type' => $message_info['mime_type'],
+            'filename' => $message_info['filename'],
             'type' => 1,
             'is_to_group' => $type = 'single' ? 0 : 1,
             'from_member_id' => $this->uid,
@@ -53,9 +54,8 @@ class ImessageController extends ApiBaseController
 
         $from_member = M('member')->field('id, nickname, avatar')->find($this->uid);
         $from_member['avatar'] = GetSmallAvatar($this->uid);
-
         $new_msg['from_member'] = $from_member;
-
+        @urlopen('http://im.alhelp.net/send_message/', $new_msg);
         $this->success($new_msg);
     }
 

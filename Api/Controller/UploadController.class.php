@@ -43,10 +43,10 @@ class UploadController extends ApiBaseController {
 	 */
 	public function file_post() {
 		$this->check_token ();
-		$type = I('get.p', 'normal');
+		$type = I('get.type', 'normal');
 		$uid =  $this->uid;
 		$config = C ( 'DOWNLOAD_UPLOAD' );
-		$config['rootPath'] = $config['rootPath'].$type;
+		$config['savePath'] = $type;
 		$upload = new Upload ( $config );
 
 		$infos = $upload->upload ();

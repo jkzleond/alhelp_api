@@ -36,3 +36,35 @@ function int_to_string(&$data, $map = array('gender'=>array(1=>'男',0=>'女'),'
 	return $data;
 }
 
+/**
+ * 发送http请求
+ * @param $url
+ * @param $data
+ * @param $headers
+ * @param $cookie
+ * @return array|null
+ */
+function urlopen($url, $data, $headers, $cookie) {
+	$ch = curl_init();
+	curl_setopt_array($ch, array(
+	CURLOPT_URL => $url,
+	CURLOPT_HEADER  => 1,
+	CURLOPT_RETURNTRANSFER => 1,
+	CURLOPT_HTTPHEADER => $headers,
+	CURLOPT_POST => !empty($data) ? 1 : 0,
+	CURLOPT_POSTFIELDS => $data,
+	CURLOPT_COOKIE => $cookie
+	));
+	$response = curl_exec($ch);
+	curl_close($ch);
+	if (!$response) {
+		return null;
+	}
+	$resp_arr = array();
+	$parts = explode("\r\n\r\n", $response);
+	$resp_arr['header'] = $parts[0];
+	$resp_arr['body'] = $parts[1];
+	preg_match('/HTTP.* (?P<status>\d{3}) .*/Ui', $resp_arr['header'], $match);
+	$resp_arr['status_code'] = $match['status'];
+	return $resp_arr;
+}

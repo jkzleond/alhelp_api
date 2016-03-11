@@ -31,7 +31,9 @@ class FansController extends ApiBaseController {
 				"INNER JOIN member m on f.from_member_id = m.id",
 			),
 			'where' => array("f.to_member_id" => $uid),
-			'field' => "UNIX_TIMESTAMP(f.add_time) as add_time,m.id AS from_member_id,m.nickname AS from_member_nickname,max(t.time) AS last_pillow_talk_time, IF(f2.id IS NOT NULL, '1', '0') as is_mutual",
+			'field' => "UNIX_TIMESTAMP(f.add_time) as add_time,m.id AS from_member_id, m.id as member_id,
+			m.nickname AS from_member_nickname, m.nickname as name,
+			max(t.time) AS last_pillow_talk_time, IF(f2.id IS NOT NULL, '1', '0') as is_mutual",
 			'order' => "is_mutual desc, t.time desc",
 			'group' => "f.id",
 		);
@@ -98,7 +100,9 @@ class FansController extends ApiBaseController {
 				"INNER JOIN member m on f.to_member_id = m.id",
 			),
 			'where' => array("f.from_member_id" => $uid),
-			'field' => "UNIX_TIMESTAMP(f.add_time) as add_time,m.id AS to_member_id,m.nickname AS from_member_nickname,max(t.time) AS last_pillow_talk_time, IF(f2.id IS NOT NULL, '1', '0') as is_mutual",
+			'field' => "UNIX_TIMESTAMP(f.add_time) as add_time,m.id AS to_member_id,m.id AS member_id,
+			m.nickname AS from_member_nickname,m.nickname AS name,
+			max(t.time) AS last_pillow_talk_time, IF(f2.id IS NOT NULL, '1', '0') as is_mutual",
 			'order' => "is_mutual desc, t.time desc",
 			'group' => "f.id",
 		);
