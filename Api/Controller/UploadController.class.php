@@ -46,7 +46,7 @@ class UploadController extends ApiBaseController {
 		$type = I('get.type', 'normal');
 		$uid =  $this->uid;
 		$config = C ( 'DOWNLOAD_UPLOAD' );
-		$config['savePath'] = $type;
+		$config['savePath'] = $type.'/';
 		$upload = new Upload ( $config );
 
 		$infos = $upload->upload ();
