@@ -55,7 +55,10 @@ class ImessageController extends ApiBaseController
         $from_member = M('member')->field('id, nickname, avatar')->find($this->uid);
         $from_member['avatar'] = GetSmallAvatar($this->uid);
         $new_msg['from_member'] = $from_member;
-        @urlopen('http://im.alhelp.net/send_message/', $new_msg);
+        $to_im_server = I('get.tis', '1', 'intval');
+        if ($to_im_server) {
+            @urlopen('http://localhost:5000/send_message', json_encode($new_msg));
+        }
         $this->success($new_msg);
     }
 
@@ -96,7 +99,7 @@ class ImessageController extends ApiBaseController
         $page_size = I('get.ps', 10, 'intval');
         $message_model = D('Imessage');
         $no_read = $message_model->get_no_read($this->uid, $type, $from_id, $page_num, $page_size);
-        $total_rows = $message_model->get_no_read_total($this->uid);
+        $total_rows = $message_model->get_no_read_total($this->uid, $type, $from_id);
         $total_pages = $page_num ? ceil($total_rows/$page_size) : ( $total_rows > 0 ? 1 : 0 );
         $this->success(
             array(
@@ -201,7 +204,7 @@ class ImessageController extends ApiBaseController
      */
     public function mark_read_put() {
         $this->check_token();
-        $type = I('get.type', 'single');
+        $type = I('get.type');
         $from_id = I('get.from_id');
         if (!$from_id) {
             $this->error(1001);
@@ -210,16 +213,46 @@ class ImessageController extends ApiBaseController
         $mark_success = false;
 
         if ($type == 'single') {
-            $mark_success = M('Imessage')->where(array(
-                'from_member_id' => $from_id,
+            $single_condition = array(
                 'to_id' => $this->uid,
                 'is_to_group' => 0
-            ))->setField('is_read', 1);
+            );
+
+            if ($from_id) {
+                $single_condition['from_member_id'] = $from_id;
+            }
+
+            $mark_success = M('Imessage')->where($single_condition)->setField('is_read', 1);
+        } else if($type == 'group') {
+            $group_condition = array(
+                'member_id' => $this->uid
+            );
+
+            if ($from_id) {
+                $group_condition['group_id'] = $from_id;
+            }
+            $mark_success = M('GroupMember')->where($from_id)->setField('last_read_time', date('Y-m-d H:i:s'));
         } else {
-            $mark_success = M('GroupMember')->where(array(
-                'member_id' => $this->uid,
-                'group_id' => $from_id
-            ))->setField('last_read_time', date('Y-m-d H:i:s'));
+            //按消息id标记
+            $ids = $this->get_request_data('ids');
+            $mark_success = M('Imessage')->where(array(
+                'id' => array('in', $ids)
+            ))->setField('is_read', 1);
+            $group_msgs = M('Imessage')->where(array(
+                'id' => array('in', $ids),
+                'is_to_group' => '1'
+            ))->order('add_time desc')->select();
+            if(!empty($group_msgs)){
+                $last_group_msg_time = $group_msgs[0]['add_time'];
+                $group_ids = array();
+                foreach ($group_msgs as $group_msg) {
+                    $group_ids[] = $group_msg['to_id'];
+                }
+                $mark_success = M('GroupMember')->where(array(
+                    'member_id' => $this->uid,
+                    'group_id' => array('in', $group_ids)
+                ))->setField('last_read_time', $last_group_msg_time);
+            }
         }
 
         if ($mark_success === false) {
@@ -240,7 +273,7 @@ class ImessageController extends ApiBaseController
         $start_time = time();
         while ( true ) {
             $elapsed = time() - $start_time;
-            $no_read_total = D('Imessage')->get_no_read_total($this->uid, $last_time);
+            $no_read_total = D('Imessage')->get_no_read_total($this->uid, null, null, $last_time);
             if ($no_read_total or $elapsed >= 60) {
                 $this->success(array(
                     'has_new' => $no_read_total > 0,

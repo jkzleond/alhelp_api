@@ -44,17 +44,30 @@ function int_to_string(&$data, $map = array('gender'=>array(1=>'男',0=>'女'),'
  * @param $cookie
  * @return array|null
  */
-function urlopen($url, $data, $headers, $cookie) {
+function urlopen($url, $data, $headers=null, $cookie=null) {
 	$ch = curl_init();
+	$data_str = '';
+
+	if (is_array($data)) {
+		foreach ( $data as $key => $value ) {
+			$data_str .= $key.'='.$value.'&';
+		}
+		$data_str = rtrim($data_str, '&');
+	} else {
+		$data_str = $data;
+	}
+
+
 	curl_setopt_array($ch, array(
-	CURLOPT_URL => $url,
-	CURLOPT_HEADER  => 1,
-	CURLOPT_RETURNTRANSFER => 1,
-	CURLOPT_HTTPHEADER => $headers,
-	CURLOPT_POST => !empty($data) ? 1 : 0,
-	CURLOPT_POSTFIELDS => $data,
-	CURLOPT_COOKIE => $cookie
+		CURLOPT_URL => $url,
+		CURLOPT_HEADER  => 1,
+		CURLOPT_RETURNTRANSFER => 1,
+		CURLOPT_HTTPHEADER => !empty($headers) ? $headers : array(),
+		CURLOPT_POST => !empty($data) ? 1 : 0,
+		CURLOPT_POSTFIELDS => $data_str,
+		CURLOPT_COOKIE => $cookie
 	));
+
 	$response = curl_exec($ch);
 	curl_close($ch);
 	if (!$response) {

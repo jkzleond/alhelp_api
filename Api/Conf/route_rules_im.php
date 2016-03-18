@@ -12,7 +12,7 @@ return array(
 	'v1/im/message/history/:type/:to_id\d/[:p]/[:ps]' => 'Imessage/history',//GET:获取与某个用户或某个群的聊天记录
     'v1/im/message/no_read/[:type]/[:from_id]/[:p]/[:ps]' => 'Imessage/no_read_msg', //GET:获取未读消息
     'v1/im/message/no_read_total$' => 'Imessage/no_read_msg_total', //GET:获取未读消息总条数
-    'v1/im/message/mark_read/:type/:from_id$' => 'Imessage/mark_read', //PUT:将消息标记已读
+    'v1/im/message/mark_read/[:type]/[:from_id]' => 'Imessage/mark_read', //PUT:将消息标记已读
 	'v1/im/message/rct_contacts/[:p]/[:ps]' => 'Imessage/recent_contacts', //GET:获取当前用户的最近联系人
 	'v1/im/friends$' => 'Imessage/friend_list', //GET:获取好友列表
 	'v1/im/sync_check' => 'Imessage/sync_check' //是否有新状态检查(长连接, 检查新消息等, 有新状态则调用相应接口获取数据)

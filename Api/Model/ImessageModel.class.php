@@ -37,7 +37,7 @@ class ImessageModel extends RelationModel
                 union
                 (
                   select m.id as message_id, m.to_id as contact_id, m.is_to_group,
-                  if( m.add_time > gm.last_read_time or gm.last_read_time is null, '0', '1' ) as is_read
+                  if( m.add_time > gm.last_read_time or gm.last_read_time is null and m.from_member_id != '$uid', '0', '1' ) as is_read
                   from imessage as m
                   left join group_member as gm on gm.group_id = m.to_id and m.is_to_group = 1 
                   where m.is_to_group = 1 and m.type = 1 and gm.member_id = '$uid' 
@@ -58,7 +58,9 @@ SQL;
           else
             g.image
           end as avatar,
-          case when rec_m.is_to_group = 1 and m.mime_type = 0 then
+          case when rec_m.is_to_group = 1 and m.mime_type = 0 and length(m.content) > 10 then
+            concat(mb.nickname, ':', left(m.content, '10'), '...')
+          when rec_m.is_to_group = 1 and m.mime_type = 0 then
             concat(mb.nickname, ':', m.content)
           when rec_m.is_to_group = 1 and m.mime_type = 1 then
             concat(mb.nickname, ':', '[图片]')
@@ -66,6 +68,8 @@ SQL;
             concat(mb.nickname, ':', '[图片]')
           when rec_m.is_to_group = 1 and m.mime_type = 3 then
             concat(mb.nickname, ':', '[文件]', m.filename)
+          when rec_m.is_to_group = 0 and m.mime_type = 0 and length(m.content) > 10 then
+            concat(left(m.content, '10'), '...')
           when rec_m.is_to_group = 0 and m.mime_type = 0 then
             m.content
           when rec_m.is_to_group = 0 and m.mime_type = 1 then
@@ -246,28 +250,20 @@ SQL;
             'm.type' => 1
         );
         $group_condition = array(
-            'm.to_id' => array('in', $group_in),        //群
+            'm.to_id' => !empty($group_in) ? array('in', $group_in) : 'no_id',        //群
             'm.is_to_group' => 1,
             'm.type' => 1,
+            'm.from_member_id' => array('neq', $uid),
             '_string' => 'm.add_time > gm.last_read_time or gm.last_read_time is null' //群未读通过最后一次阅读群消息时间来标记
         );
         $condition = null;
 
         if ($from_id) {
-            $single_condition['m.from_member_id'] = array(
-                array('neq', $uid),
-                array('eq', $from_id)
-            );
-            $group_condition['m.from_member_id'] = array(
-                array('neq', $uid),
-                array('eq', $from_id)
-            );
-        } else {
-            $single_condition['m.from_member_id'] = array('neq', $uid);
-            $group_condition['m.from_member_id'] = array('neq', $uid);
+            $single_condition['m.from_member_id'] = array('eq', $from_id);
+            $group_condition['m.to_id'] =  array('eq', $from_id);
         }
 
-        if ($type == 'single' or empty($group_in)) {
+        if ($type == 'single') {
             //获取用户发来的未读消息,或用户没有加入任何群
             $condition = $single_condition;
         } elseif ($type == 'group') {
@@ -280,7 +276,8 @@ SQL;
             );
         }
 
-        $this->alias('m')->join('left join group_member gm on gm.group_id = m.to_id and m.is_to_group = 1')
+        $this->alias('m')->join("left join group_member gm on gm.group_id = m.to_id and gm.member_id = '$uid' and m.is_to_group = 1")
+            ->join('left join member mb on mb.id = m.from_member_id')
             ->where($condition);
 
         if ($page_num) {
@@ -288,28 +285,27 @@ SQL;
         }
 
         $no_read = $this->field("m.id, m.mime_type, if(m.is_to_group = 1, '1','0') as is_to_group, if(m.is_read = 1, '1', '0') as is_read,
-        case when length(m.content) > 10 and m.mime_type = 0 then
-        concat(left(m.content, '10'), '...')
-        when m.mime_type = 0 then
+        case when m.mime_type = 0 then
         m.content
         when m.mime_type = 1 then
         '[图片]'
         when m.mime_type = 2 then
         '[声音]'
         when m.mime_type = 3 then
-        concat('[文件]', filename)
+        concat('[文件]', m.filename)
         end as content,
         case when m.mime_type = 1 or m.mime_type = 2 then
         m.content
         else
         null
         end as src,
-        case when m.is_to_group = 1 then
-        m.to_id
-        else
-        m.from_member_id
-        end as from_member_id, m.add_time
+        m.from_member_id, m.to_id, m.add_time,
+        mb.nickname as name
         ")->order('add_time desc')->select();
+
+        foreach ($no_read as &$msg) {
+            $msg['avatar'] = GetSmallAvatar($msg['from_member_id']);
+        }
 
         return $no_read;
     }
@@ -317,32 +313,35 @@ SQL;
     /**
      * 获取未读总条数
      * @param string|int $uid
-     * @param string     $start_time 起始时间
+     * @param string|null     $type
+     * @param string|int|null $from_id
+     * @param string|null     $start_time 起始时间
      * @return int
      */
-    public function get_no_read_total($uid, $start_time=null) {
+    public function get_no_read_total($uid, $type=null, $from_id=null, $start_time=null) {
         $group_in = M('group_member')->where(array('member_id' => $uid))->getField('group_id', true);
 
-        $condition = array(
-            array(
-                'm.to_id' => $uid,                          //非群
-                'm.from_member_id' => array('neq', $uid),
-                'm.is_to_group' => 0,
-                'm.is_read' => 0,
-                'm.type' => 1
-            ),
-            '_logic' => 'OR'
+        $single_condition = array(
+            'm.to_id' => $uid,                          //非群
+            'm.is_to_group' => 0,
+            'm.is_read' => 0,
+            'm.type' => 1
         );
+        $group_condition = array(
+            'm.to_id' => !empty($group_in) ? array('in', $group_in) : 'no_id',        //群
+            'm.is_to_group' => 1,
+            'm.type' => 1,
+            'm.from_member_id' => array('neq', $uid),
+            '_string' => 'm.add_time > gm.last_read_time or gm.last_read_time is null' //群未读通过最后一次阅读群消息时间来标记
+        );
+        $condition = null;
 
-        if ( !empty($group_in) ){
-            $condition[] = array(
-                'm.to_id' => array('in', $group_in),        //群
-                'm.from_member_id' => array('neq', $uid),
-                'm.is_to_group' => 1,
-                'm.type' => 1,
-                '_string' => 'm.add_time > gm.last_read_time or gm.last_read_time is null'
-            );
+        if ($from_id) {
+            $single_condition['m.from_member_id'] = array('eq', $from_id);
+            $group_condition['m.to_id'] =  array('eq', $from_id);
         }
+
+        $condition = null;
 
         if (!empty($start_time)) {
             $condition = array(
@@ -351,10 +350,24 @@ SQL;
             );
         }
 
+        if ($type == 'single') {
+            //获取用户发来的未读消息,或用户没有加入任何群
+            $condition = $single_condition;
+        } elseif ($type == 'group') {
+            $condition = $group_condition;
+        } else {
+            $condition = array(
+                $single_condition,
+                $group_condition,
+                '_logic' => 'OR'
+            );
+        }
+
         $total = $this->table(array('imessage' => 'm'))
-            ->join('left join group_member gm on gm.group_id = m.to_id and m.is_to_group = 1')
+            ->join("left join group_member gm on gm.group_id = m.to_id and gm.member_id = '$uid' and m.is_to_group = 1")
             ->where($condition)
             ->count();
+
         return $total;
     }
 }

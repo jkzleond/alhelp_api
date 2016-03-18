@@ -127,7 +127,7 @@ class GroupController extends ApiBaseController {
         
 		$options = array();
         if ($is_owner and $uid) {
-            $options['where']['owner_id'] = $uid;
+            $options['where']['g.owner_id'] = $uid;
         } elseif ($uid) {
             $options['where']['gm.member_id'] = $uid;
             $options['where']['g.owner_id'] = $uid;
