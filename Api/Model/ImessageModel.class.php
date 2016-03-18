@@ -240,7 +240,7 @@ SQL;
      * @param int $page_size
      * @return array
      */
-    public function get_no_read($uid, $type=null, $from_id=null, $page_num=1, $page_size=10) {
+    public function get_no_read($uid, $type=null, $from_id=null, $start_time=null, $page_num=1, $page_size=10) {
         $group_in = M('group_member')->where(array('member_id' => $uid))->getField('group_id', true);
 
         $single_condition = array(
@@ -273,6 +273,13 @@ SQL;
                 $single_condition,
                 $group_condition,
                 '_logic' => 'OR'
+            );
+        }
+
+        if (!empty($start_time)) {
+            $condition = array(
+                $condition,
+                'm.add_time' => array('gt', $start_time)
             );
         }
 
@@ -343,12 +350,6 @@ SQL;
 
         $condition = null;
 
-        if (!empty($start_time)) {
-            $condition = array(
-                $condition,
-                'm.add_time' => array('gt', $start_time)
-            );
-        }
 
         if ($type == 'single') {
             //获取用户发来的未读消息,或用户没有加入任何群
@@ -360,6 +361,13 @@ SQL;
                 $single_condition,
                 $group_condition,
                 '_logic' => 'OR'
+            );
+        }
+
+        if (!empty($start_time)) {
+            $condition = array(
+                $condition,
+                'm.add_time' => array('gt', $start_time)
             );
         }
 

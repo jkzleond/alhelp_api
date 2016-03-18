@@ -97,8 +97,12 @@ class ImessageController extends ApiBaseController
         $from_id = I('get.from_id', null, 'intval');
         $page_num = I('get.p', null, 'intval');
         $page_size = I('get.ps', 10, 'intval');
+        $last_time = I('get._', null);
+
+        $last_time && ($last_time = date('Y-m-d', $last_time));
+
         $message_model = D('Imessage');
-        $no_read = $message_model->get_no_read($this->uid, $type, $from_id, $page_num, $page_size);
+        $no_read = $message_model->get_no_read($this->uid, $type, $from_id, $last_time, $page_num, $page_size);
         $total_rows = $message_model->get_no_read_total($this->uid, $type, $from_id);
         $total_pages = $page_num ? ceil($total_rows/$page_size) : ( $total_rows > 0 ? 1 : 0 );
         $this->success(
@@ -106,7 +110,8 @@ class ImessageController extends ApiBaseController
                 'list' => $no_read,
                 'count' => count($no_read),
                 'total_rows' => $total_rows,
-                'total_pages' => $total_pages
+                'total_pages' => $total_pages,
+                '_' => time()
             )
         );
     }
@@ -233,7 +238,6 @@ class ImessageController extends ApiBaseController
             }
             $mark_success = M('GroupMember')->where($from_id)->setField('last_read_time', date('Y-m-d H:i:s'));
         } else {
-            //按消息id标记
             $ids = $this->get_request_data('ids');
             $mark_success = M('Imessage')->where(array(
                 'id' => array('in', $ids)
