@@ -42,9 +42,14 @@ class UploadController extends ApiBaseController {
 	 * 文件上传
 	 */
 	public function file_post() {
-		$this->check_token ();
+		$redirect_url = I('get.redirect_url'); //用于跨域上传的回调地址
+		$callback = I('get.cb'); //用于跨域上传的回调脚本
+		$uid = I('get.uid', null);
+		if (!$uid) {
+			$this->check_token();
+			$uid = $this->$uid;
+		}
 		$type = I('get.type', 'normal');
-		$uid =  $this->uid;
 		$config = C ( 'DOWNLOAD_UPLOAD' );
 		$config['savePath'] = $type.'/';
 		$upload = new Upload ( $config );
@@ -70,7 +75,26 @@ class UploadController extends ApiBaseController {
 				}
 				$tmp[]=$info;
 			}
+
+			if ($redirect_url) {
+				$redirect_url = str_replace('{data}', urlencode(json_encode(array(
+					'success' => true,
+					'data' => $tmp
+				))), $redirect_url);
+				$this->redirect($redirect_url);
+				return;
+			}
 			$this->success ( $tmp );
+		}
+
+		if ($redirect_url) {
+			$redirect_url = str_replace('{data}', urlencode(json_encode(array(
+					'success' => false,
+					'code' => '1417',
+					'message' => '上传失败'
+			))), $redirect_url);
+			$this->redirect($redirect_url);
+			return;
 		}
 
 		$this->error ( 1417 );
