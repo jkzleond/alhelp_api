@@ -9,13 +9,13 @@ class IndexController extends ApiBaseController
 		uploadImg();
 		phpinfo();
 	}
-	
+
 	// 修改密码
 	public function set_pwd_put()
 	{
 		$this->check_token();
 	}
-	
+
 	// 冻结用户
 	public function disable_user_put()
 	{
