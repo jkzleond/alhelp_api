@@ -77,13 +77,12 @@ class UploadController extends ApiBaseController {
 			}
 
 			if ($redirect_url) {
-				$redirect_url = str_replace('{data}', urlencode(json_encode(array(
+				$redirect_url = str_replace('{data}', urlencode(base64_encode(json_encode(array(
 					'success' => true,
 					'data' => $tmp
-				))), $redirect_url);
+				)))), $redirect_url);
 				header('Location: '. $redirect_url);
-				echo $redirect_url;
-				//$this->redirect($redirect_url);
+				redirect($redirect_url);
 				return;
 			}
 			$this->success ( $tmp );
