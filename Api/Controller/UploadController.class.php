@@ -81,6 +81,7 @@ class UploadController extends ApiBaseController {
 					'success' => true,
 					'data' => $tmp
 				))), $redirect_url);
+				header('Location: '. $redirect_url);
 				echo $redirect_url;
 				//$this->redirect($redirect_url);
 				return;
