@@ -8,9 +8,13 @@ use Think\Upload;
 class UploadController extends ApiBaseController {
 
 	public function images() {
-		$this->check_token ();
-		
-		$uid =  $this->uid;
+		$redirect_url = I('get.redirect_url'); //用于跨域上传的回调地址
+		$callback = I('get.cb'); //用于跨域上传的回调脚本
+		$uid = I('get.uid', null);
+		if (!$uid) {
+			$this->check_token();
+			$uid = $this->$uid;
+		}
 		$config = C ( 'PICTURE_UPLOAD' );
 		$config ['rootPath'] = GetImageRoot ();
 		$upload = new Upload ( $config );
@@ -32,7 +36,28 @@ class UploadController extends ApiBaseController {
 				}
 				$tmp[]=$info;
 			}
+
+			if ($redirect_url) {
+				$redirect_url = str_replace('{data}', urlencode(base64_encode(json_encode(array(
+						'success' => true,
+						'data' => $tmp
+				)))), $redirect_url);
+				header('Location: '. $redirect_url);
+				redirect($redirect_url);
+				return;
+			}
+
 			$this->success ( $tmp );
+		}
+
+		if ($redirect_url) {
+			$redirect_url = str_replace('{data}', urlencode(json_encode(array(
+					'success' => false,
+					'code' => '1417',
+					'message' => '上传失败'
+			))), $redirect_url);
+			$this->redirect($redirect_url);
+			return;
 		}
 		
 		$this->error ( 1417 );
