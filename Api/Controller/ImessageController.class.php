@@ -92,7 +92,12 @@ class ImessageController extends ApiBaseController
      * 获取未读消息
      */
     public function no_read_msg_get() {
-        $this->check_token();
+        $uid = I('get.uid');
+        if (!$uid) {
+            $this->check_token();
+            $uid = $this->uid;
+        }
+
         $type = I('get.type', null);
         $from_id = I('get.from_id', null, 'intval');
         $page_num = I('get.p', null, 'intval');
@@ -102,8 +107,8 @@ class ImessageController extends ApiBaseController
         $last_time && ($last_time = date('Y-m-d', $last_time));
 
         $message_model = D('Imessage');
-        $no_read = $message_model->get_no_read($this->uid, $type, $from_id, $last_time, $page_num, $page_size);
-        $total_rows = $message_model->get_no_read_total($this->uid, $type, $from_id);
+        $no_read = $message_model->get_no_read($uid, $type, $from_id, $last_time, $page_num, $page_size);
+        $total_rows = $message_model->get_no_read_total($uid, $type, $from_id);
         $total_pages = $page_num ? ceil($total_rows/$page_size) : ( $total_rows > 0 ? 1 : 0 );
         $this->success(
             array(

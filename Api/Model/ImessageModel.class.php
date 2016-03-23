@@ -310,7 +310,8 @@ SQL;
         m.from_member_id, m.to_id, m.add_time,
         mb.nickname as name,
         mb.nickname as nickname,
-        grp.name as group_name
+        grp.name as group_name,
+        grp.image as group_image
         ")->order('add_time desc')->select();
 
         foreach ($no_read as &$msg) {
