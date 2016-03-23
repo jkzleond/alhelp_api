@@ -301,7 +301,7 @@ SQL;
         when m.mime_type = 3 then
         concat('[文件]', m.filename)
         end as content,
-        case when m.mime_type = 1 or m.mime_type = 2 then
+        case when m.mime_type = 1 or m.mime_type = 2 or m.mime_type = 3 then
         m.content
         else
         null

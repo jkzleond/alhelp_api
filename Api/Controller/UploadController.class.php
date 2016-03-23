@@ -16,12 +16,22 @@ class UploadController extends ApiBaseController {
 			$uid = $this->$uid;
 		}
 		$config = C ( 'PICTURE_UPLOAD' );
-		$config ['rootPath'] = GetImageRoot ();
+		//$config ['rootPath'] = GetImageRoot ();
 		$upload = new Upload ( $config );
 		
 		$infos = $upload->upload ();
 		// var_dump($infos);
 		if (! $infos) {
+			if ($redirect_url) {
+				$redirect_url = str_replace('{data}', urlencode(base64_encode(json_encode(array(
+						'success' => false,
+						'code' => '1400',
+						'message' => $upload->getError()
+				)))), $redirect_url);
+				header('Location: '. $redirect_url);
+				redirect($redirect_url);
+				return;
+			}
 			$this->errorMsg ( '1400', $upload->getError () );
 		} else {
 			$tmp=array();
@@ -82,6 +92,16 @@ class UploadController extends ApiBaseController {
 		$infos = $upload->upload ();
 		// var_dump($infos);
 		if (! $infos) {
+			if ($redirect_url) {
+				$redirect_url = str_replace('{data}', urlencode(base64_encode(json_encode(array(
+						'success' => false,
+						'code' => '1400',
+						'message' => $upload->getError()
+				)))), $redirect_url);
+				header('Location: '. $redirect_url);
+				redirect($redirect_url);
+				return;
+			}
 			$this->errorMsg ( '1400', $upload->getError () );
 		} else {
 			$tmp=array();
