@@ -285,6 +285,7 @@ SQL;
 
         $this->alias('m')->join("left join group_member gm on gm.group_id = m.to_id and gm.member_id = '$uid' and m.is_to_group = 1")
             ->join('left join member mb on mb.id = m.from_member_id')
+            ->join('left join `group` grp on grp.id = m.to_id and m.is_to_group = 1')
             ->where($condition);
 
         if ($page_num) {
@@ -307,7 +308,9 @@ SQL;
         null
         end as src,
         m.from_member_id, m.to_id, m.add_time,
-        mb.nickname as name
+        mb.nickname as name,
+        mb.nickname as nickname,
+        grp.name as group_name
         ")->order('add_time desc')->select();
 
         foreach ($no_read as &$msg) {
