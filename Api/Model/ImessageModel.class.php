@@ -309,20 +309,7 @@ SQL;
         }
 
         $no_read = $this->field("m.id, m.mime_type, if(m.is_to_group = 1, '1','0') as is_to_group, if(m.is_read = 1, '1', '0') as is_read,
-        case when m.mime_type = 0 then
-        m.content
-        when m.mime_type = 1 then
-        '[图片]'
-        when m.mime_type = 2 then
-        '[声音]'
-        when m.mime_type = 3 then
-        concat('[文件]', m.filename)
-        end as content,
-        case when m.mime_type = 1 or m.mime_type = 2 or m.mime_type = 3 then
-        m.content
-        else
-        null
-        end as src,
+        m.content,
         m.from_member_id, m.to_id, m.add_time,
         mb.nickname as name,
         mb.nickname as nickname,
