@@ -79,8 +79,17 @@ SQL;
           when rec_m.is_to_group = 0 and m.mime_type = 3 then
             concat('[文件]', m.filename)
           end as msg_content,
-          m.mime_type, 
-          m.goods_id,
+          m.mime_type,
+          (
+            select goods_id from imessage
+            where
+                (from_member_id = rec_m.contact_id or to_id = rec_m.contact_id)
+                and
+                is_to_group = rec_m.is_to_group
+                and
+                goods_id != 0
+            order by add_time desc limit 1
+          ) as goods_id,
           m.add_time as msg_time")
                                 ->table($get_recent_message_id_sql)->alias('rec_m')
                                 ->join('left join imessage as m on m.id = rec_m.message_id')
