@@ -108,8 +108,9 @@ class ImessageController extends ApiBaseController
 
         $message_model = D('Imessage');
         $no_read = $message_model->get_no_read($uid, $type, $from_id, $last_time, $page_num, $page_size);
-        $total_rows = $message_model->get_no_read_total($uid, $type, $from_id);
+        $total_rows = $message_model->get_no_read_total($uid, $type, $from_id, $last_time);
         $total_pages = $page_num ? ceil($total_rows/$page_size) : ( $total_rows > 0 ? 1 : 0 );
+
         $this->success(
             array(
                 'list' => $no_read,
