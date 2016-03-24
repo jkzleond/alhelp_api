@@ -322,9 +322,9 @@ SQL;
             if ( !empty($from_member) ) {
                 $from_member['avatar'] = GetSmallAvatar($from_member['id']);
             }
-            $message['from_member'] = $from_member;
+            $msg['from_member'] = $from_member;
         }
-        
+
         return $no_read;
     }
 
