@@ -80,6 +80,7 @@ SQL;
             concat('[文件]', m.filename)
           end as msg_content,
           m.mime_type,
+          ifnull(
           (
             select goods_id from imessage
             where
@@ -95,7 +96,7 @@ SQL;
                 and
                 goods_id != 0
             order by add_time desc limit 1
-          ) as goods_id,
+          ), '0') as goods_id,
           m.add_time as msg_time")
                                 ->table($get_recent_message_id_sql)->alias('rec_m')
                                 ->join('left join imessage as m on m.id = rec_m.message_id')
