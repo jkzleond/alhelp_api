@@ -104,7 +104,7 @@ class ImessageController extends ApiBaseController
         $page_size = I('get.ps', 10, 'intval');
         $last_time = I('get._', null);
 
-        $last_time && ($last_time = date('Y-m-d', $last_time));
+        $last_time && ($last_time = date('Y-m-d H:i:s', $last_time));
 
         $message_model = D('Imessage');
         $no_read = $message_model->get_no_read($uid, $type, $from_id, $last_time, $page_num, $page_size);
