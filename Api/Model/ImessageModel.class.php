@@ -83,7 +83,11 @@ SQL;
           (
             select goods_id from imessage
             where
-                (from_member_id = rec_m.contact_id or to_id = rec_m.contact_id)
+                (
+                    (from_member_id = rec_m.contact_id and to_id = '$uid' and is_to_group = 0)
+                    or
+                    (to_id = rec_m.contact_id and is_to_group = 1)
+                )
                 and
                 is_to_group = rec_m.is_to_group
                 and
