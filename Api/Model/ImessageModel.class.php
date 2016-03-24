@@ -86,6 +86,8 @@ SQL;
                 (
                     (from_member_id = rec_m.contact_id and to_id = '$uid' and is_to_group = 0)
                     or
+                    (from_member_id = '$uid' and to_id = rec_m.contact_id and is_to_group = 0)
+                    or
                     (to_id = rec_m.contact_id and is_to_group = 1)
                 )
                 and
