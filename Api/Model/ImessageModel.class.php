@@ -312,15 +312,19 @@ SQL;
         m.content,
         m.from_member_id, m.to_id, m.add_time,
         mb.nickname as name,
-        mb.nickname as nickname,
         grp.name as group_name,
         grp.image as group_image
         ")->order('add_time desc')->select();
 
+        //获取相关用户和群的信息
         foreach ($no_read as &$msg) {
-            $msg['avatar'] = GetSmallAvatar($msg['from_member_id']);
+            $from_member = M('member')->find($msg['from_member_id']);
+            if ( !empty($from_member) ) {
+                $from_member['avatar'] = GetSmallAvatar($from_member['id']);
+            }
+            $message['from_member'] = $from_member;
         }
-
+        
         return $no_read;
     }
 
