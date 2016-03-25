@@ -66,7 +66,11 @@ class ImessageController extends ApiBaseController
      * 获取聊天记录
      */
     public function history_get() {
-        $this->check_token();
+        $uid = I('get.uid');
+        if (!$uid) {
+            $this->check_token();
+            $uid = $this->uid;
+        }
         $to_id = I('get.to_id', null, 'intval');
         if (!$to_id) {
             $this->error(1001);
@@ -76,8 +80,8 @@ class ImessageController extends ApiBaseController
         $page_size = I('get.ps', 10, 'intval');
 
         $message = D('Imessage');
-        $history = $message->get_history($this->uid, $to_id, $type, $page_num, $page_size);
-        $total_rows = $message->get_history_total($this->uid, $to_id, $type);
+        $history = $message->get_history($uid, $to_id, $type, $page_num, $page_size);
+        $total_rows = $message->get_history_total($uid, $to_id, $type);
         $total_pages = $page_num ? ceil($total_rows/$page_size) : ( $total_rows > 0 ? 1 : 0 );
 
         $this->success(array(
